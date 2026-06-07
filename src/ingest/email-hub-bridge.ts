@@ -20,19 +20,19 @@ export class EmailHubBridge implements BridgeAdapter {
     const db = new Database(this.dbPath, { readonly: true });
     try {
       const query = since
-        ? `SELECT * FROM emails WHERE received_at > ? ORDER BY received_at DESC`
-        : `SELECT * FROM emails ORDER BY received_at DESC LIMIT 500`;
+        ? `SELECT * FROM processed_emails WHERE processed_at > ? ORDER BY processed_at DESC`
+        : `SELECT * FROM processed_emails ORDER BY processed_at DESC LIMIT 500`;
       const rows = since ? db.prepare(query).all(since) : db.prepare(query).all();
       return (rows as any[]).map((row) => ({
-        id: String(row.id ?? row.message_id),
+        id: row.message_id ?? String(row.uid),
         source: "email-hub",
         title: row.subject ?? "",
-        content: row.body ?? row.snippet ?? "",
+        content: row.summary ?? "",
         url: undefined,
-        timestamp: row.received_at ?? new Date().toISOString(),
+        timestamp: row.processed_at ?? new Date().toISOString(),
         score: undefined,
-        tags: row.labels ? JSON.parse(row.labels) : [],
-        entities: row.from ? [row.from] : [],
+        tags: [row.category, row.urgency, row.source_account].filter(Boolean),
+        entities: row.sender ? [row.sender] : [],
       }));
     } finally {
       db.close();
@@ -42,7 +42,7 @@ export class EmailHubBridge implements BridgeAdapter {
   async count(): Promise<number> {
     const db = new Database(this.dbPath, { readonly: true });
     try {
-      const row = db.prepare("SELECT COUNT(*) as cnt FROM emails").get() as any;
+      const row = db.prepare("SELECT COUNT(*) as cnt FROM processed_emails").get() as any;
       return row.cnt;
     } finally {
       db.close();

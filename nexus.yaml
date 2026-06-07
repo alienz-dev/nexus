@@ -14,11 +14,11 @@ sources:
     enabled: true
   job_hunter:
     path: ~/projects/job-hunter
-    db: data/job-hunter.sqlite
+    db: data/job_hunter.db
     enabled: true
   email_hub:
     path: ~/projects/email-hub
-    db: data/state.sqlite
+    db: data/email-hub.db
     enabled: true
   vault:
     path: ~/vault

@@ -20,8 +20,8 @@ export class JobHunterBridge implements BridgeAdapter {
     const db = new Database(this.dbPath, { readonly: true });
     try {
       const query = since
-        ? `SELECT * FROM job_listings WHERE scraped_at > ? ORDER BY scraped_at DESC`
-        : `SELECT * FROM job_listings ORDER BY scraped_at DESC LIMIT 500`;
+        ? `SELECT * FROM listings WHERE scraped_at > ? ORDER BY scraped_at DESC`
+        : `SELECT * FROM listings ORDER BY scraped_at DESC LIMIT 500`;
       const rows = since ? db.prepare(query).all(since) : db.prepare(query).all();
       return (rows as any[]).map((row) => ({
         id: row.uid ?? String(row.id),
@@ -30,8 +30,8 @@ export class JobHunterBridge implements BridgeAdapter {
         content: row.description ?? "",
         url: row.url ?? undefined,
         timestamp: row.scraped_at ?? row.posted_date ?? new Date().toISOString(),
-        score: undefined,
-        tags: [row.company, row.location, row.remote ? "remote" : "onsite"].filter(Boolean),
+        score: row.final_score ?? row.llm_score ?? row.keyword_score ?? undefined,
+        tags: [row.company, row.location, row.remote ? "remote" : "onsite", row.source].filter(Boolean),
         entities: [row.company, row.title].filter(Boolean),
       }));
     } finally {
@@ -42,7 +42,7 @@ export class JobHunterBridge implements BridgeAdapter {
   async count(): Promise<number> {
     const db = new Database(this.dbPath, { readonly: true });
     try {
-      const row = db.prepare("SELECT COUNT(*) as cnt FROM job_listings").get() as any;
+      const row = db.prepare("SELECT COUNT(*) as cnt FROM listings").get() as any;
       return row.cnt;
     } finally {
       db.close();
