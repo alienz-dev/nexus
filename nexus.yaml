@@ -1,0 +1,67 @@
+# Nexus PKMS Configuration
+version: "1"
+
+# Database paths
+database:
+  main: ./data/nexus.sqlite
+  vectors: ./data/vectors.lance
+
+# Connected projects
+sources:
+  ai_feeds:
+    path: ~/projects/ai-feeds
+    db: db/ai-feeds.sqlite
+    enabled: true
+  job_hunter:
+    path: ~/projects/job-hunter
+    db: data/job-hunter.sqlite
+    enabled: true
+  email_hub:
+    path: ~/projects/email-hub
+    db: data/state.sqlite
+    enabled: true
+  vault:
+    path: ~/vault
+    enabled: true
+
+# RSS feeds (direct, not via RSSHub)
+rss:
+  feeds:
+    - https://hnrss.org/frontpage
+    - https://www.reddit.com/r/MachineLearning/.rss
+    - https://dev.to/feed
+    - https://bach-ai.com/feed
+    - https://tldr.tech/api/rss/ai
+
+# RSSHub (for sources without native RSS)
+rsshub:
+  enabled: false
+  url: http://localhost:1200
+  routes: []
+
+# LLM configuration
+llm:
+  provider: mimo-gateway
+  model: mimo-v2.5-pro
+  fallback: deepseek
+
+# API server
+server:
+  port: 3777
+  host: localhost
+
+# Telegram notifications
+telegram:
+  enabled: false
+  bot_token: ""
+  chat_id: ""
+
+# Search configuration
+search:
+  embedding_model: BAAI/bge-m3
+  reranker: BAAI/bge-reranker-v2-m3
+  rrf_k: 60
+  weights:
+    bm25: 0.4
+    vector: 0.4
+    graph: 0.2
