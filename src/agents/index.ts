@@ -7,3 +7,5 @@ export { Consolidator } from "./consolidator.js";
 export type { ConsolidationResult } from "./consolidator.js";
 export { PathPlanner } from "./path-planner.js";
 export type { LearningStep, LearningPath } from "./path-planner.js";
+export { KnowledgeAuditor } from "./auditor.js";
+export type { AuditFinding, AuditResult } from "./auditor.js";

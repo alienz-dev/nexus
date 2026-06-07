@@ -1,34 +1,35 @@
 # Nexus PKMS — Status
 
 **Version:** 0.1.0
-**Phase:** 4 (Consumer API + MCP) — COMPLETE
+**Phase:** 5 (Self-Upgrade) — COMPLETE
 **Last Updated:** 2026-06-07
 
 ## What's Working
 
 - [x] Project scaffold (TypeScript, ESM, Vitest, Zod, 30 tests pass)
-- [x] CLI: `nexus status`, `nexus ingest`, `nexus search`, `nexus enrich`, `nexus gaps`
-- [x] SDD: 20 issues (15 closed), 1 spec, constitution, 14 ADRs
-- [x] 5 bridge adapters: ai-feeds (326 papers), job-hunter (322 listings), email-hub (32 emails), vault (5842 files), RSS (77 items)
+- [x] CLI: `nexus status`, `nexus ingest`, `nexus search`, `nexus enrich`, `nexus gaps`, `nexus resolve`, `nexus audit`
+- [x] SDD: 20 issues (20 closed), 1 spec, constitution, 14 ADRs
+- [x] 5 bridge adapters: ai-feeds, job-hunter, email-hub, vault, RSS
+- [x] RSSHub integration (configurable routes in nexus.yaml)
 - [x] Content indexer with MD5 differential updates (Khoj pattern)
-- [x] LanceDB vector store (1024-d, 6597 vectors)
-- [x] BM25 + vector search with weighted RRF fusion
-- [x] Entity extraction (rules + LLM, 1353 entities: 895 skills, 245 roles, 139 companies)
-- [x] Enrichment worker (async, batched, 0 errors)
+- [x] LanceDB vector store (1024-d, BM25 + vector RRF)
+- [x] Entity extraction (rules + LLM, 1353 entities)
+- [x] Entity resolution (canonical ID registry, 25 seeded skills with aliases)
+- [x] Enrichment worker (async, batched)
 - [x] Tana-style supertag schemas (5 types)
-- [x] Gap detector agent (compares skills vs job market demand)
-- [x] Weekly consolidator agent (pattern extraction from content)
-- [x] Learning path planner (generates curricula from gaps)
-- [x] Hono REST API (4 endpoints: search, gaps, digest, status)
-- [x] MCP server (3 tools: search, get_entity, detect_gaps)
+- [x] Gap detector (with canonical deduplication)
+- [x] Weekly consolidator + learning path planner
+- [x] Knowledge audit agent (orphans, duplicates, missing details)
+- [x] Telegram digest (daily/weekly via Bot API)
+- [x] Hono REST API (4 endpoints) + MCP server (3 tools)
 
-## Not Started (Phase 5)
+## Future Enhancements
 
-- [ ] Telegram digest
-- [ ] Knowledge audit agent
-- [ ] RSSHub integration
-- [ ] Entity resolution (canonical ID registry)
-- [ ] LanceDB with real BGE-M3 embeddings
+- [ ] LanceDB with real BGE-M3 embeddings (replace deterministic stub)
+- [ ] Mastra agent orchestration (currently direct function calls)
+- [ ] LightRAG knowledge graph construction
+- [ ] Cognee memory layer (remember/recall/forget/improve)
+- [ ] Scheduled cron jobs (ingestion, enrichment, consolidation, audit)
 
 ## Architecture
 

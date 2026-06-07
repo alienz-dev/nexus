@@ -75,6 +75,14 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
     ingest.register(rssBridge);
   }
 
+  // RSSHub integration
+  if (config.rsshub?.enabled && config.rsshub.routes?.length && (!options?.source || options.source === "rsshub")) {
+    const rsshubFeeds = config.rsshub.routes.map((route) => `${config.rsshub.url}${route}`);
+    const rsshubBridge = new ingest.RssBridge("rsshub", rsshubFeeds);
+    adapters.push(rsshubBridge);
+    ingest.register(rsshubBridge);
+  }
+
   // Run ingestion with vector indexing
   for (const adapter of adapters) {
     const spinner = ora(`Ingesting from ${adapter.name}...`).start();

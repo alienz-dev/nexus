@@ -6,6 +6,8 @@ import { searchCommand } from "./commands/search.js";
 import { ingestCommand } from "./commands/ingest.js";
 import { enrichCommand } from "./commands/enrich.js";
 import { gapsCommand } from "./commands/gaps.js";
+import { resolveCommand } from "./commands/resolve.js";
+import { auditCommand } from "./commands/audit.js";
 
 const program = new Command();
 
@@ -41,5 +43,17 @@ program
   .command("gaps")
   .description("Show skill gaps detected by comparing knowledge vs job market")
   .action(gapsCommand);
+
+program
+  .command("resolve")
+  .description("Manage the canonical entity registry")
+  .option("--seed", "Seed with known skill/company aliases")
+  .option("--lookup <name>", "Look up a name in the canonical registry")
+  .action((opts) => resolveCommand({ seed: opts.seed, lookup: opts.lookup }));
+
+program
+  .command("audit")
+  .description("Run knowledge graph audit (orphans, duplicates, stale facts)")
+  .action(auditCommand);
 
 program.parse();

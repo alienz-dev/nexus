@@ -1,6 +1,7 @@
 /** Gap detector agent — compares knowledge graph vs job market skills demand. */
 import type { EntityStore } from "../knowledge/store.js";
 import type { UnifiedSearch } from "../knowledge/search.js";
+import type { EntityResolver } from "../knowledge/resolver.js";
 import type { AgentResult } from "./types.js";
 
 export interface SkillGap {
@@ -14,10 +15,12 @@ export interface SkillGap {
 export class GapDetector {
   private store: EntityStore;
   private search: UnifiedSearch;
+  private resolver: EntityResolver | null;
 
-  constructor(store: EntityStore, search: UnifiedSearch) {
+  constructor(store: EntityStore, search: UnifiedSearch, resolver?: EntityResolver) {
     this.store = store;
     this.search = search;
+    this.resolver = resolver ?? null;
   }
 
   /** Detect skill gaps by comparing known skills against job market demand. */
@@ -27,10 +30,20 @@ export class GapDetector {
     // Get all skill entities from the knowledge graph
     const skills = this.store.findByType("skill");
 
+    // Deduplicate using canonical resolver
+    const seen = new Map<string, typeof skills[0]>();
+    for (const skill of skills) {
+      const canonical = this.resolver?.resolve(skill.name, "skill") ?? skill.name.toLowerCase();
+      const existing = seen.get(canonical);
+      if (!existing || skill.sources.length > existing.sources.length) {
+        seen.set(canonical, skill);
+      }
+    }
+
     // Search for job listings mentioning skills
     const gaps: SkillGap[] = [];
-    for (const skill of skills) {
-      const jobResults = this.search.bm25Search(skill.name, 10);
+    for (const [canonicalName, skill] of seen) {
+      const jobResults = this.search.bm25Search(canonicalName, 10);
       const demandCount = jobResults.filter((r) => r.item.type === "content").length;
 
       const currentLevel = (skill.properties as any)?.level ?? 0;
@@ -38,7 +51,7 @@ export class GapDetector {
 
       if (demandLevel > currentLevel) {
         gaps.push({
-          skill: skill.name,
+          skill: canonicalName,
           currentLevel,
           demandLevel,
           gap: demandLevel - currentLevel,
