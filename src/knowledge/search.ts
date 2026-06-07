@@ -1,6 +1,8 @@
 /** Unified search across all sources — BM25 + vector with weighted RRF. */
 import type Database from "better-sqlite3";
 import type { SearchResult } from "./types.js";
+import type { LanceVectorStore } from "./vectors.js";
+import { embedText } from "../ingest/embeddings.js";
 
 export interface SearchWeights {
   bm25: number;
@@ -22,11 +24,13 @@ export class UnifiedSearch {
   private db: Database.Database;
   private weights: SearchWeights;
   private rrfK: number;
+  private vectorStore: LanceVectorStore | null;
 
-  constructor(db: Database.Database, weights?: SearchWeights, rrfK?: number) {
+  constructor(db: Database.Database, weights?: SearchWeights, rrfK?: number, vectorStore?: LanceVectorStore) {
     this.db = db;
     this.weights = weights ?? DEFAULT_WEIGHTS;
     this.rrfK = rrfK ?? DEFAULT_RRF_K;
+    this.vectorStore = vectorStore ?? null;
   }
 
   /** Search using BM25 keyword matching on the content index. */
@@ -34,7 +38,6 @@ export class UnifiedSearch {
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return [];
 
-    // Simple BM25-style scoring: count term matches weighted by field
     const conditions = terms.map(() => "(LOWER(title) LIKE ? OR LOWER(content) LIKE ?)").join(" OR ");
     const params = terms.flatMap((t) => [`%${t}%`, `%${t}%`]);
 
@@ -47,8 +50,22 @@ export class UnifiedSearch {
 
     return rows.map((row, i) => ({
       item: { id: `${row.source}:${row.id}`, type: "content", content: `${row.title} ${row.content}` },
-      score: 1 / (i + 1), // Simplified rank score
+      score: 1 / (i + 1),
       source: "bm25" as const,
+    }));
+  }
+
+  /** Search using vector similarity via LanceDB. */
+  async vectorSearch(query: string, limit = 20): Promise<SearchResult[]> {
+    if (!this.vectorStore) return [];
+
+    const vector = embedText(query);
+    const results = await this.vectorStore.search(vector, limit);
+
+    return results.map((r) => ({
+      item: { id: `${r.source}:${r.id}`, type: "content", content: "" },
+      score: r.score,
+      source: "vector" as const,
     }));
   }
 
@@ -61,7 +78,6 @@ export class UnifiedSearch {
         const r = results[rank];
         const key = r.item.id;
         const existing = scores.get(key) ?? { score: 0, item: r.item, sources: new Set() };
-        // RRF formula: sum of 1 / (k + rank) for each result set
         existing.score += 1 / (this.rrfK + rank + 1);
         existing.sources.add(r.source);
         scores.set(key, existing);
@@ -77,14 +93,17 @@ export class UnifiedSearch {
       }));
   }
 
-  /** Full unified search: BM25 + vector (placeholder) + graph (placeholder), merged with RRF. */
-  search(options: SearchOptions): SearchResult[] {
+  /** Full unified search: BM25 + vector, merged with RRF. */
+  async search(options: SearchOptions): Promise<SearchResult[]> {
     const limit = options.limit ?? 20;
-    const bm25Results = this.bm25Search(options.query, limit);
 
-    // Placeholder: vector and graph search will be implemented with LanceDB and LightRAG
-    const vectorResults: SearchResult[] = [];
-    const graphResults: SearchResult[] = [];
+    // Run BM25 and vector search in parallel
+    const [bm25Results, vectorResults] = await Promise.all([
+      Promise.resolve(this.bm25Search(options.query, limit)),
+      this.vectorSearch(options.query, limit),
+    ]);
+
+    const graphResults: SearchResult[] = []; // Phase 3: LightRAG
 
     const merged = this.rrfMerge(bm25Results, vectorResults, graphResults);
     return merged.slice(0, limit);

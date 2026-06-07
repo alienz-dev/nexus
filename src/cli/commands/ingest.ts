@@ -4,12 +4,22 @@ import ora from "ora";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { ContentIndexer } from "../../knowledge/indexer.js";
+import { EntityStore } from "../../knowledge/store.js";
+import { LanceVectorStore } from "../../knowledge/vectors.js";
+import { embedBatch } from "../../ingest/embeddings.js";
+import { queueEnrichment, initEnrichmentTable } from "../../ingest/enrichment-worker.js";
 import * as ingest from "../../ingest/index.js";
 
 export async function ingestCommand(options?: { source?: string }): Promise<void> {
   const config = loadConfig();
   const db = initDb(config.database.main);
   const indexer = new ContentIndexer(db);
+
+  // Initialize vector store and entity store
+  const vectorStore = new LanceVectorStore(config.database.vectors);
+  await vectorStore.init();
+  const entityStore = new EntityStore(db);
+  initEnrichmentTable(db);
 
   console.log(chalk.bold("\nNexus PKMS Ingestion\n"));
 
@@ -65,19 +75,40 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
     ingest.register(rssBridge);
   }
 
-  // Run ingestion
+  // Run ingestion with vector indexing
   for (const adapter of adapters) {
     const spinner = ora(`Ingesting from ${adapter.name}...`).start();
     try {
       const items = await adapter.fetch();
       const result = indexer.index(items);
-      spinner.succeed(`${adapter.name}: +${result.added} ~${result.updated} =${result.skipped} (${items.length} total)`);
+
+      // Index vectors for new/updated items
+      const toEmbed = items.filter((_, i) => i < result.added + result.updated);
+      if (toEmbed.length > 0) {
+        const vectors = embedBatch(toEmbed.map((item) => `${item.title} ${item.content}`));
+        await vectorStore.upsert(toEmbed.map((item, i) => ({
+          id: item.id,
+          source: item.source,
+          vector: vectors[i],
+          content: item.content.slice(0, 1000),
+          title: item.title,
+        })));
+      }
+
+      // Queue new items for entity extraction
+      const newItems = items.slice(0, result.added + result.updated);
+      if (newItems.length > 0) {
+        queueEnrichment(db, newItems);
+      }
+
+      spinner.succeed(`${adapter.name}: +${result.added} ~${result.updated} =${result.skipped} (${items.length} total, ${toEmbed.length} vectors, ${newItems.length} queued for enrichment)`);
     } catch (e: any) {
       spinner.fail(`${adapter.name}: ${e.message}`);
     }
   }
 
   console.log(chalk.gray("\n" + "─".repeat(50)));
-  console.log(`Total indexed: ${chalk.green(indexer.count())}`);
+  console.log(`Content indexed: ${chalk.green(indexer.count())}`);
+  console.log(`Vectors indexed: ${chalk.green(await vectorStore.count())}`);
   closeDb(db);
 }

@@ -5,7 +5,7 @@ import type { UnifiedSearch } from "../../knowledge/search.js";
 export function createSearchRoutes(search: UnifiedSearch): Hono {
   const app = new Hono();
 
-  app.get("/", (c) => {
+  app.get("/", async (c) => {
     const q = c.req.query("q");
     const limit = parseInt(c.req.query("limit") ?? "20", 10);
 
@@ -13,7 +13,7 @@ export function createSearchRoutes(search: UnifiedSearch): Hono {
       return c.json({ error: "Missing query parameter 'q'" }, 400);
     }
 
-    const results = search.search({ query: q, limit });
+    const results = await search.search({ query: q, limit });
     return c.json({ query: q, results, count: results.length });
   });
 

@@ -58,13 +58,13 @@ describe("UnifiedSearch", () => {
     expect(results).toHaveLength(0);
   });
 
-  it("handles multi-word queries", () => {
-    const results = search.search({ query: "machine learning" });
+  it("handles multi-word queries", async () => {
+    const results = await search.search({ query: "machine learning" });
     expect(results.length).toBeGreaterThan(0);
   });
 
-  it("respects limit parameter", () => {
-    const results = search.search({ query: "programming", limit: 1 });
+  it("respects limit parameter", async () => {
+    const results = await search.search({ query: "programming", limit: 1 });
     expect(results).toHaveLength(1);
   });
 });

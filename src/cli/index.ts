@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { statusCommand } from "./commands/status.js";
 import { searchCommand } from "./commands/search.js";
 import { ingestCommand } from "./commands/ingest.js";
+import { enrichCommand } from "./commands/enrich.js";
 import { gapsCommand } from "./commands/gaps.js";
 
 const program = new Command();
@@ -29,6 +30,12 @@ program
   .description("Run ingestion from connected sources")
   .option("-s, --source <name>", "Specific source to ingest from")
   .action((opts) => ingestCommand({ source: opts.source }));
+
+program
+  .command("enrich")
+  .description("Process pending entity extraction jobs")
+  .option("-l, --limit <n>", "Max jobs to process", "50")
+  .action((opts) => enrichCommand({ limit: parseInt(opts.limit, 10) }));
 
 program
   .command("gaps")

@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { ContentIndexer } from "../../knowledge/indexer.js";
+import { LanceVectorStore } from "../../knowledge/vectors.js";
 import * as ingest from "../../ingest/index.js";
 
 export async function statusCommand(): Promise<void> {
@@ -14,7 +15,16 @@ export async function statusCommand(): Promise<void> {
   console.log(chalk.gray("─".repeat(50)));
 
   // Indexed count
-  console.log(`Indexed items: ${chalk.green(indexer.count())}`);
+  console.log(`Content indexed: ${chalk.green(indexer.count())}`);
+
+  // Vector count
+  try {
+    const vectorStore = new LanceVectorStore(config.database.vectors);
+    await vectorStore.init();
+    console.log(`Vectors indexed: ${chalk.green(await vectorStore.count())}`);
+  } catch {
+    console.log(`Vectors indexed: ${chalk.dim("not available")}`);
+  }
 
   // Source status
   console.log(chalk.bold("\nSources:"));

@@ -3,13 +3,23 @@ import chalk from "chalk";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { UnifiedSearch } from "../../knowledge/search.js";
+import { LanceVectorStore } from "../../knowledge/vectors.js";
 
 export async function searchCommand(query: string, options?: { limit?: number }): Promise<void> {
   const config = loadConfig();
   const db = initDb(config.database.main);
-  const search = new UnifiedSearch(db, config.search?.weights, config.search?.rrf_k);
 
-  const results = search.search({ query, limit: options?.limit ?? 10 });
+  // Initialize vector store if available
+  let vectorStore: LanceVectorStore | undefined;
+  try {
+    vectorStore = new LanceVectorStore(config.database.vectors);
+    await vectorStore.init();
+  } catch {
+    // Vector store not available — search without it
+  }
+
+  const search = new UnifiedSearch(db, config.search?.weights, config.search?.rrf_k, vectorStore);
+  const results = await search.search({ query, limit: options?.limit ?? 10 });
 
   console.log(chalk.bold(`\nSearch: "${query}"\n`));
   console.log(chalk.gray("─".repeat(50)));

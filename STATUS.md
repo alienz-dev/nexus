@@ -1,38 +1,36 @@
 # Nexus PKMS — Status
 
 **Version:** 0.1.0
-**Phase:** 1 (Foundation) — COMPLETE
+**Phase:** 2 (Knowledge Graph + Vectors) — COMPLETE
 **Last Updated:** 2026-06-07
 
 ## What's Working
 
-- [x] Project scaffold and configuration
-- [x] TypeScript strict mode with ESM
-- [x] Vitest test runner setup (21 tests pass)
-- [x] CLI skeleton (Commander) — `nexus status`, `nexus ingest`, `nexus search`
-- [x] SDD artifacts (.nexus/) — 20 issues, 1 spec, constitution
-- [x] Config loading from nexus.yaml with Zod validation (yaml package)
+- [x] Project scaffold and configuration (TypeScript, ESM, Vitest, Zod)
+- [x] CLI: `nexus status`, `nexus ingest`, `nexus search`, `nexus enrich`, `nexus gaps`
+- [x] SDD artifacts: 20 issues, 1 spec, constitution, 14 ADRs
 - [x] SQLite database with WAL mode, 9 tables
 - [x] 5 bridge adapters: ai-feeds, job-hunter, email-hub, vault, RSS
 - [x] Content indexer with MD5 differential updates (Khoj pattern)
-- [x] BM25 search with RRF fusion (vector/graph placeholders for Phase 2)
-- [x] 6245 items indexed (326 ai-feeds papers, 77 RSS items, 5842 vault files)
+- [x] LanceDB vector store with deterministic embedding stub (1024-d)
+- [x] BM25 + vector search with weighted RRF fusion
+- [x] Entity extraction pipeline (rules first, LLM for unknowns)
+- [x] Enrichment worker (async, batched, 0 errors on 326 items)
+- [x] Tana-style supertag schemas (Skill, Company, Role, Application, LearningResource)
+- [x] 6245 items indexed, 6245 vectors, 493 entities extracted
 
-## In Progress (Phase 2)
-
-- [ ] Entity extraction pipeline (rules + LLM)
-- [ ] LanceDB vector store with BGE-M3 embeddings
-- [ ] LightRAG knowledge graph construction
-- [ ] Enrichment worker (async processing)
-- [ ] Unified search: BM25 + vector + graph with weighted RRF + reranking
-
-## Not Started (Phase 3-5)
+## In Progress (Phase 3)
 
 - [ ] Agent orchestration (Mastra)
+- [ ] Gap detector agent
+- [ ] Weekly consolidator agent
+- [ ] Learning path planner
+
+## Not Started (Phase 4-5)
+
 - [ ] MCP server
 - [ ] Hono REST API
 - [ ] Telegram digest
-- [ ] Cognee memory layer
 - [ ] Knowledge audit agent
 - [ ] RSSHub integration
 

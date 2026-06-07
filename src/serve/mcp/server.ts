@@ -29,7 +29,7 @@ export function createMcpTools(
         required: ["query"],
       },
       handler: async (params) => {
-        const results = search.search({
+        const results = await search.search({
           query: params.query as string,
           limit: (params.limit as number) ?? 10,
         });
