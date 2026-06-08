@@ -20,16 +20,12 @@ export async function watchCommand(options?: { interval?: number }): Promise<voi
     const vectorStore = new LanceVectorStore(config.database.vectors, getEmbeddingDim());
     await vectorStore.init();
 
-    const home = process.env.HOME ?? "";
     const adapters: ingest.BridgeAdapter[] = [];
 
     for (const [name, src] of Object.entries(config.sources ?? {})) {
       if (!src.enabled) continue;
-      const projectPath = src.path.replace("~", home);
+      const projectPath = src.path;
       switch (name) {
-        case "ai_feeds": case "ai-feeds": adapters.push(new ingest.AiFeedsBridge(projectPath, src.db ?? "db/ai-feeds.sqlite")); break;
-        case "job_hunter": case "job-hunter": adapters.push(new ingest.JobHunterBridge(projectPath, src.db ?? "data/job_hunter.db")); break;
-        case "email_hub": case "email-hub": adapters.push(new ingest.EmailHubBridge(projectPath, src.db ?? "data/email-hub.db")); break;
         case "vault": adapters.push(new ingest.VaultBridge(projectPath)); break;
       }
     }

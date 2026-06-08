@@ -4,7 +4,7 @@ import { z } from "zod";
 /** Schema for a normalized feed item from any source. */
 export const FeedItemSchema = z.object({
   id: z.string().describe("Unique identifier within the source"),
-  source: z.string().describe("Source name (ai-feeds, job-hunter, vault, etc.)"),
+  source: z.string().describe("Source name (vault, rss, rsshub, etc.)"),
   title: z.string(),
   content: z.string(),
   url: z.string().url().optional(),

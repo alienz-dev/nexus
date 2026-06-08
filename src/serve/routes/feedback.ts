@@ -1,5 +1,5 @@
-/** Feedback API — provides scoring signals to ai-feeds and job-hunter.
- *  This is the feedback loop: nexus intelligence → scoring improvements. */
+/** Feedback API — provides scoring signals from the knowledge graph.
+ *  External services can consume these to improve their own scoring. */
 import { Hono } from "hono";
 import type { EntityStore } from "../../knowledge/store.js";
 import type { EntityResolver } from "../../knowledge/resolver.js";
@@ -28,7 +28,7 @@ export function createFeedbackRoutes(
   const app = new Hono();
 
   /** GET /api/feedback/scoring-signals
-   *  Returns all scoring signals that ai-feeds and job-hunter can use. */
+   *  Returns all scoring signals from the knowledge graph. */
   app.get("/scoring-signals", async (c) => {
     const signals = await buildScoringSignals(store, resolver, search, detector);
     return c.json(signals);

@@ -1,9 +1,6 @@
 /** Stub tests for bridge adapters. */
 import { describe, it, expect } from "vitest";
 import { RssBridge } from "../../src/ingest/rss-bridge.js";
-import { AiFeedsBridge } from "../../src/ingest/ai-feeds-bridge.js";
-import { JobHunterBridge } from "../../src/ingest/job-hunter-bridge.js";
-import { EmailHubBridge } from "../../src/ingest/email-hub-bridge.js";
 import { VaultBridge } from "../../src/ingest/vault-bridge.js";
 import * as registry from "../../src/ingest/registry.js";
 
@@ -44,27 +41,6 @@ describe("RssBridge", () => {
   it("returns feed count", async () => {
     const bridge = new RssBridge("test", ["https://a.com", "https://b.com"]);
     expect(await bridge.count()).toBe(2);
-  });
-});
-
-describe("AiFeedsBridge", () => {
-  it("reports unavailable when DB missing", async () => {
-    const bridge = new AiFeedsBridge("/nonexistent", "db.sqlite");
-    expect(await bridge.isAvailable()).toBe(false);
-  });
-});
-
-describe("JobHunterBridge", () => {
-  it("reports unavailable when DB missing", async () => {
-    const bridge = new JobHunterBridge("/nonexistent", "data.sqlite");
-    expect(await bridge.isAvailable()).toBe(false);
-  });
-});
-
-describe("EmailHubBridge", () => {
-  it("reports unavailable when DB missing", async () => {
-    const bridge = new EmailHubBridge("/nonexistent", "state.sqlite");
-    expect(await bridge.isAvailable()).toBe(false);
   });
 });
 

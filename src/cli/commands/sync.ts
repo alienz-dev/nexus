@@ -22,7 +22,7 @@ export async function syncCommand(options?: { target?: string }): Promise<void> 
   const auditor = new KnowledgeAuditor(store, indexer);
 
   // Target: vault/nexus/ subdirectory
-  const vaultPath = config.sources?.vault?.path?.replace("~", process.env.HOME ?? "") ?? "~/vault";
+  const vaultPath = config.sources?.vault?.path ?? "~/vault";
   const targetDir = options?.target ?? resolve(vaultPath, "nexus");
 
   console.log(chalk.bold(`\nNexus Sync → ${targetDir}\n`));

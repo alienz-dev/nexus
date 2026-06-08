@@ -1,5 +1,4 @@
-/** LLM-based entity extraction — uses DeepSeek V4 Flash for cases rules can't handle.
- *  TODO: Wire to actual DeepSeek API via llm-router or direct. */
+/** LLM-based entity extraction — uses DeepSeek API for cases rules can't handle. */
 
 export interface ExtractedEntity {
   name: string;

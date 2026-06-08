@@ -1,6 +1,7 @@
 /** Configuration loading from nexus.yaml. */
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { homedir } from "node:os";
 import { z } from "zod";
 import { parse as parseYaml } from "yaml";
 
@@ -53,9 +54,24 @@ const ConfigSchema = z.object({
 
 export type NexusConfig = z.infer<typeof ConfigSchema>;
 
-/** Load configuration from nexus.yaml in the project root. */
+/** Expand ~ to the user's home directory. */
+export function expandTilde(p: string): string {
+  if (p.startsWith("~/") || p === "~") {
+    return p.replace("~", homedir());
+  }
+  return p;
+}
+
+/** Resolve config path: --config flag > NEXUS_CONFIG env > ./nexus.yaml */
+function resolveConfigPath(configPath?: string): string {
+  if (configPath) return resolve(configPath);
+  if (process.env.NEXUS_CONFIG) return resolve(process.env.NEXUS_CONFIG);
+  return resolve(process.cwd(), "nexus.yaml");
+}
+
+/** Load configuration from nexus.yaml. */
 export function loadConfig(configPath?: string): NexusConfig {
-  const path = configPath ?? resolve(process.cwd(), "nexus.yaml");
+  const path = resolveConfigPath(configPath);
 
   if (!existsSync(path)) {
     console.warn(`Config not found at ${path}, using defaults`);
@@ -65,9 +81,26 @@ export function loadConfig(configPath?: string): NexusConfig {
   const raw = readFileSync(path, "utf-8");
   try {
     const parsed = parseYaml(raw);
-    return ConfigSchema.parse(parsed);
+    const config = ConfigSchema.parse(parsed);
+    return expandConfigPaths(config);
   } catch (e) {
     console.warn(`Failed to parse config: ${e}, using defaults`);
     return ConfigSchema.parse({});
   }
+}
+
+/** Expand tildes in all path fields. */
+function expandConfigPaths(config: NexusConfig): NexusConfig {
+  const sources: Record<string, { path: string; db?: string; enabled: boolean }> = {};
+  for (const [name, src] of Object.entries(config.sources)) {
+    sources[name] = { ...src, path: expandTilde(src.path) };
+  }
+  return {
+    ...config,
+    sources,
+    database: {
+      main: expandTilde(config.database.main),
+      vectors: expandTilde(config.database.vectors),
+    },
+  };
 }

@@ -25,7 +25,7 @@ async function main() {
   for (const [name, src] of Object.entries(config.sources ?? {})) {
     if (!src.enabled) continue;
     if (name === "vault") {
-      const bridge = new ingest.VaultBridge(src.path.replace("~", process.env.HOME ?? ""));
+      const bridge = new ingest.VaultBridge(src.path);
       adapters.push(bridge);
       ingest.register(bridge);
     }

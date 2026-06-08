@@ -1,9 +1,0 @@
-name: nexus
-description: Personal Knowledge Management System Hub
-version: 0.1.0
-language: typescript
-framework: mastra + hono
-agent_backend: mimo-gateway
-issue_store: .nexus/issues
-spec_store: .nexus/specs
-test_map: .nexus/test-map.json

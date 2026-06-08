@@ -28,39 +28,14 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
 
   // Register adapters for configured sources
   const adapters: ingest.BridgeAdapter[] = [];
-  const home = process.env.HOME ?? "";
 
   for (const [name, src] of Object.entries(config.sources ?? {})) {
     if (!src.enabled) continue;
     if (options?.source && name !== options.source) continue;
 
-    const projectPath = src.path.replace("~", home);
+    const projectPath = src.path;
 
     switch (name) {
-      case "ai_feeds":
-      case "ai-feeds": {
-        const dbRel = src.db ?? "db/ai-feeds.sqlite";
-        const bridge = new ingest.AiFeedsBridge(projectPath, dbRel);
-        adapters.push(bridge);
-        ingest.register(bridge);
-        break;
-      }
-      case "job_hunter":
-      case "job-hunter": {
-        const dbRel = src.db ?? "data/job-hunter.sqlite";
-        const bridge = new ingest.JobHunterBridge(projectPath, dbRel);
-        adapters.push(bridge);
-        ingest.register(bridge);
-        break;
-      }
-      case "email_hub":
-      case "email-hub": {
-        const dbRel = src.db ?? "data/state.sqlite";
-        const bridge = new ingest.EmailHubBridge(projectPath, dbRel);
-        adapters.push(bridge);
-        ingest.register(bridge);
-        break;
-      }
       case "vault": {
         const bridge = new ingest.VaultBridge(projectPath);
         adapters.push(bridge);
@@ -91,21 +66,10 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
     const spinner = ora(`Ingesting from ${adapter.name}...`).start();
     try {
       const items = await adapter.fetch();
-
-      // Also fetch learning resources from job-hunter
-      let allItems = items;
-      if (adapter.name === "job-hunter" && "fetchLearningResources" in adapter) {
-        try {
-          const learningItems = await (adapter as any).fetchLearningResources();
-          allItems = [...items, ...learningItems];
-          spinner.text = `Ingesting from ${adapter.name} (${items.length} listings + ${learningItems.length} learning resources)...`;
-        } catch { /* learning resources optional */ }
-      }
-
-      const result = indexer.index(allItems);
+      const result = indexer.index(items);
 
       // Index vectors for new/updated items
-      const toEmbed = allItems.filter((_, i) => i < result.added + result.updated);
+      const toEmbed = items.filter((_, i) => i < result.added + result.updated);
       if (toEmbed.length > 0) {
         await vectorStore.upsert(toEmbed.map((item) => ({
           id: item.id,
@@ -117,12 +81,12 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
       }
 
       // Queue new items for entity extraction
-      const newItems = allItems.slice(0, result.added + result.updated);
+      const newItems = items.slice(0, result.added + result.updated);
       if (newItems.length > 0) {
         queueEnrichment(db, newItems);
       }
 
-      spinner.succeed(`${adapter.name}: +${result.added} ~${result.updated} =${result.skipped} (${allItems.length} total, ${toEmbed.length} vectors, ${newItems.length} queued for enrichment)`);
+      spinner.succeed(`${adapter.name}: +${result.added} ~${result.updated} =${result.skipped} (${items.length} total, ${toEmbed.length} vectors, ${newItems.length} queued for enrichment)`);
     } catch (e: any) {
       spinner.fail(`${adapter.name}: ${e.message}`);
     }

@@ -2,7 +2,7 @@
   "mcpServers": {
     "nexus": {
       "command": "npx",
-      "args": ["tsx", "/Users/ding/projects/nexus/src/serve/mcp/standalone.ts"],
+      "args": ["tsx", "./src/serve/mcp/standalone.ts"],
       "env": {}
     }
   }

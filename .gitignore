@@ -15,10 +15,19 @@ dist/
 
 # LanceDB
 *.lance/
-data/vectors.lance/
 
-# Nexus state
-.nexus/test-map.json
+# User config (use nexus.yaml.example as template)
+nexus.yaml
+
+# User data
+data/
+
+# Personal workflow artifacts
+.agents/
+.nexus/
+
+# MCP config (use .mcp.json.example as template)
+.mcp.json
 
 # IDE
 .vscode/

@@ -6,22 +6,10 @@ database:
   main: ./data/nexus.sqlite
   vectors: ./data/vectors.lance
 
-# Connected projects
+# Connected sources — edit these paths to match your setup
 sources:
-  ai_feeds:
-    path: ~/projects/ai-feeds
-    db: db/ai-feeds.sqlite
-    enabled: true
-  job_hunter:
-    path: ~/projects/job-hunter
-    db: data/job_hunter.db
-    enabled: true
-  email_hub:
-    path: ~/projects/email-hub
-    db: data/email-hub.db
-    enabled: true
   vault:
-    path: ~/vault
+    path: /path/to/your/obsidian-vault
     enabled: true
 
 # RSS feeds (direct, not via RSSHub)
@@ -30,7 +18,6 @@ rss:
     - https://hnrss.org/frontpage
     - https://www.reddit.com/r/MachineLearning/.rss
     - https://dev.to/feed
-    - https://bach-ai.com/feed
     - https://tldr.tech/api/rss/ai
 
 # RSSHub (for sources without native RSS)
