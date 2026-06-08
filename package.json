@@ -23,6 +23,7 @@
     "@huggingface/transformers": "^4.2.0",
     "@lancedb/lancedb": "^0.15.0",
     "@mastra/core": "^0.10.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^12.10.0",
     "chalk": "^5.4.0",
     "commander": "^13.0.0",
