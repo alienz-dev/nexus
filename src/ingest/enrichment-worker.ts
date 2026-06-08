@@ -65,16 +65,31 @@ export async function processEnrichment(
     try {
       const entities = await extractEntities(`${job.title} ${job.content}`);
 
-      // Store extracted entities in a transaction
+      // Store extracted entities and create co-occurrence relations
       const storeTx = db.transaction(() => {
+        const entityIds: string[] = [];
         for (const entity of entities) {
-          entityStore.upsertEntity({
+          const stored = entityStore.upsertEntity({
             type: entity.type,
             name: entity.name,
             properties: { confidence: entity.confidence, source: entity.source },
             sources: [`${job.source}:${job.item_id}`],
           });
+          entityIds.push(stored.id);
           entitiesExtracted++;
+        }
+
+        // Create co-occurrence relations between all entity pairs in this content
+        for (let i = 0; i < entityIds.length; i++) {
+          for (let j = i + 1; j < entityIds.length; j++) {
+            entityStore.addRelation({
+              sourceId: entityIds[i],
+              targetId: entityIds[j],
+              type: "co_occurs",
+              weight: 1.0,
+              properties: { context: `${job.source}:${job.item_id}` },
+            });
+          }
         }
       });
       storeTx();

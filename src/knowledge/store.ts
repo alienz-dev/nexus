@@ -121,6 +121,44 @@ export class EntityStore {
     return { ...fact, id };
   }
 
+  /** Find entity by name and type (case-insensitive). */
+  findByName(name: string, type: string): Entity | null {
+    const row = this.db.prepare(
+      "SELECT * FROM entities WHERE LOWER(name) = LOWER(?) AND type = ?"
+    ).get(name, type) as any;
+    if (!row) return null;
+    return {
+      id: row.id,
+      type: row.type,
+      name: row.name,
+      properties: JSON.parse(row.properties),
+      sources: JSON.parse(row.sources),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  /** Find entities related to a given entity (1-hop). */
+  findRelated(entityId: string): Entity[] {
+    const rows = this.db.prepare(`
+      SELECT e.* FROM entities e
+      WHERE e.id IN (
+        SELECT target_id FROM relations WHERE source_id = ?
+        UNION
+        SELECT source_id FROM relations WHERE target_id = ?
+      )
+    `).all(entityId, entityId) as any[];
+    return rows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      name: row.name,
+      properties: JSON.parse(row.properties),
+      sources: JSON.parse(row.sources),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  }
+
   /** Get all facts for an entity, optionally only currently valid. */
   getFacts(entityId: string, onlyValid = true): Fact[] {
     const now = new Date().toISOString();

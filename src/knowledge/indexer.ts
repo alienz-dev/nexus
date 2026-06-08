@@ -14,6 +14,7 @@ interface IndexEntry {
   timestamp: string;
   tags: string;
   entities: string;
+  links: string;
   indexedAt: string;
 }
 
@@ -37,6 +38,7 @@ export class ContentIndexer {
         timestamp TEXT NOT NULL,
         tags TEXT DEFAULT '[]',
         entities TEXT DEFAULT '[]',
+        links TEXT DEFAULT '[]',
         indexed_at TEXT NOT NULL,
         PRIMARY KEY (id, source)
       );
@@ -44,13 +46,20 @@ export class ContentIndexer {
       CREATE INDEX IF NOT EXISTS idx_content_source ON content_index(source);
       CREATE INDEX IF NOT EXISTS idx_content_hash ON content_index(hash);
     `);
+
+    // Migration: add links column if missing
+    try {
+      this.db.prepare("SELECT links FROM content_index LIMIT 1").get();
+    } catch {
+      this.db.exec("ALTER TABLE content_index ADD COLUMN links TEXT DEFAULT '[]'");
+    }
   }
 
   /** Index items, skipping those whose content hash hasn't changed (differential update). */
   index(items: FeedItem[]): { added: number; updated: number; skipped: number } {
     const upsert = this.db.prepare(`
-      INSERT INTO content_index (id, source, hash, title, content, url, timestamp, tags, entities, indexed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO content_index (id, source, hash, title, content, url, timestamp, tags, entities, links, indexed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id, source) DO UPDATE SET
         hash = excluded.hash,
         title = excluded.title,
@@ -59,6 +68,7 @@ export class ContentIndexer {
         timestamp = excluded.timestamp,
         tags = excluded.tags,
         entities = excluded.entities,
+        links = excluded.links,
         indexed_at = excluded.indexed_at
     `);
 
@@ -87,7 +97,7 @@ export class ContentIndexer {
         upsert.run(
           item.id, item.source, hash, item.title, item.content,
           item.url ?? null, item.timestamp, JSON.stringify(item.tags),
-          JSON.stringify(item.entities), now
+          JSON.stringify(item.entities), JSON.stringify(item.links ?? []), now
         );
 
         if (prevHash) updated++;
@@ -108,6 +118,13 @@ export class ContentIndexer {
   count(): number {
     const row = this.db.prepare("SELECT COUNT(*) as cnt FROM content_index").get() as any;
     return row.cnt;
+  }
+
+  /** Get wikilinks for a content item. */
+  getLinks(id: string, source: string): string[] {
+    const row = this.db.prepare("SELECT links FROM content_index WHERE id = ? AND source = ?").get(id, source) as any;
+    if (!row?.links) return [];
+    try { return JSON.parse(row.links); } catch { return []; }
   }
 }
 

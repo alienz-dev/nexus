@@ -6,7 +6,7 @@ import { initDb, closeDb } from "../../lib/db.js";
 import { ContentIndexer } from "../../knowledge/indexer.js";
 import { EntityStore } from "../../knowledge/store.js";
 import { LanceVectorStore } from "../../knowledge/vectors.js";
-import { embedTextSync, getEmbeddingDim, isModelLoaded } from "../../ingest/embeddings.js";
+import { embedBatch, getEmbeddingDim, isModelLoaded } from "../../ingest/embeddings.js";
 import { queueEnrichment, initEnrichmentTable } from "../../ingest/enrichment-worker.js";
 import * as ingest from "../../ingest/index.js";
 
@@ -71,10 +71,11 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
       // Index vectors for new/updated items
       const toEmbed = items.filter((_, i) => i < result.added + result.updated);
       if (toEmbed.length > 0) {
-        await vectorStore.upsert(toEmbed.map((item) => ({
+        const vectors = await embedBatch(toEmbed.map((item) => `${item.title} ${item.content}`));
+        await vectorStore.upsert(toEmbed.map((item, i) => ({
           id: item.id,
           source: item.source,
-          vector: embedTextSync(`${item.title} ${item.content}`),
+          vector: vectors[i],
           content: item.content.slice(0, 1000),
           title: item.title,
         })));

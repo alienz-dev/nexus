@@ -41,6 +41,9 @@ export class VaultBridge implements BridgeAdapter {
             ? rawTimestamp
             : new Date().toISOString();
 
+        // Extract wikilinks: [[Note]], [[Note|alias]], [[Note#heading]], [[Note^block]]
+        const wikilinks = this.extractWikilinks(content);
+
         items.push({
           id: relPath,
           source: "vault",
@@ -51,6 +54,7 @@ export class VaultBridge implements BridgeAdapter {
           score: undefined,
           tags,
           entities: [],
+          links: wikilinks,
         });
       } catch {
         // Skip unreadable files
@@ -63,6 +67,22 @@ export class VaultBridge implements BridgeAdapter {
   async count(): Promise<number> {
     const files = await this.walkDir(this.vaultPath);
     return files.length;
+  }
+
+  /** Extract wikilinks from markdown content. */
+  private extractWikilinks(content: string): string[] {
+    const links: string[] = [];
+    const regex = /!?\[\[([^\]]+?)\]\]/g;
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      const raw = match[1];
+      // Normalize: [[Note|alias]] → Note, [[Note#heading]] → Note, [[Note^block]] → Note
+      const target = raw.split("|")[0].split("#")[0].split("^")[0].trim();
+      if (target && !links.includes(target)) {
+        links.push(target);
+      }
+    }
+    return links;
   }
 
   /** Recursively walk directory for .md files, optionally filtered by mtime. */

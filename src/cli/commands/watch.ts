@@ -4,7 +4,7 @@ import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { ContentIndexer } from "../../knowledge/indexer.js";
 import { LanceVectorStore } from "../../knowledge/vectors.js";
-import { embedTextSync, getEmbeddingDim } from "../../ingest/embeddings.js";
+import { embedBatch, getEmbeddingDim } from "../../ingest/embeddings.js";
 import * as ingest from "../../ingest/index.js";
 
 export async function watchCommand(options?: { interval?: number }): Promise<void> {
@@ -41,9 +41,10 @@ export async function watchCommand(options?: { interval?: number }): Promise<voi
         const result = indexer.index(items);
         if (result.added > 0) {
           const toEmbed = items.slice(0, result.added);
-          await vectorStore.upsert(toEmbed.map((item) => ({
+          const vectors = await embedBatch(toEmbed.map((item) => `${item.title} ${item.content}`));
+          await vectorStore.upsert(toEmbed.map((item, i) => ({
             id: item.id, source: item.source,
-            vector: embedTextSync(`${item.title} ${item.content}`),
+            vector: vectors[i],
             content: item.content.slice(0, 1000), title: item.title,
           })));
           console.log(`  ${chalk.green(adapter.name)}: +${result.added} new items`);

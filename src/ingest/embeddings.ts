@@ -87,7 +87,8 @@ function embedTextStub(text: string): number[] {
   return vector.map((v) => v / norm);
 }
 
-/** Synchronous stub for backwards compatibility. */
+/** Synchronous stub for backwards compatibility.
+ *  @deprecated Use `embedText()` for real embeddings. This always returns a hash stub. */
 export function embedTextSync(text: string): number[] {
   return embedTextStub(text);
 }

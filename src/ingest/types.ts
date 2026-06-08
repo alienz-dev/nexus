@@ -12,6 +12,7 @@ export const FeedItemSchema = z.object({
   score: z.number().optional().describe("Relevance/importance score 0-1"),
   tags: z.array(z.string()).default([]),
   entities: z.array(z.string()).default([]).describe("Extracted entity names"),
+  links: z.array(z.string()).default([]).describe("Wikilinks or references to other content"),
 });
 
 export type FeedItem = z.infer<typeof FeedItemSchema>;

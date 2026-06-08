@@ -62,6 +62,7 @@ export class RssBridge implements BridgeAdapter {
           timestamp: updated,
           tags: [],
           entities: [],
+          links: [],
         });
       }
     } else {
@@ -80,6 +81,7 @@ export class RssBridge implements BridgeAdapter {
           content: this.stripHtml(description),
           url: link || undefined,
           timestamp: pubDate,
+          links: [],
           tags: categories,
           entities: [],
         });
