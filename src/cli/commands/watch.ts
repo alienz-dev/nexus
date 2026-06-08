@@ -32,6 +32,11 @@ export async function watchCommand(options?: { interval?: number }): Promise<voi
           if (await gh.isAvailable()) adapters.push(gh);
           break;
         }
+        case "raindrop": {
+          const rd = new ingest.RaindropBridge();
+          if (await rd.isAvailable()) adapters.push(rd);
+          break;
+        }
       }
     }
 

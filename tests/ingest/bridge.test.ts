@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { RssBridge } from "../../src/ingest/rss-bridge.js";
 import { VaultBridge } from "../../src/ingest/vault-bridge.js";
 import { GithubStarsBridge } from "../../src/ingest/github-stars-bridge.js";
+import { RaindropBridge } from "../../src/ingest/raindrop-bridge.js";
 import * as registry from "../../src/ingest/registry.js";
 
 describe("bridge adapter registry", () => {
@@ -68,5 +69,24 @@ describe("GithubStarsBridge", () => {
     expect(await bridge.isAvailable()).toBe(true);
     if (orig) process.env.GITHUB_TOKEN = orig;
     else delete process.env.GITHUB_TOKEN;
+  });
+});
+
+describe("RaindropBridge", () => {
+  it("reports unavailable when RAINDROP_TOKEN is not set", async () => {
+    const orig = process.env.RAINDROP_TOKEN;
+    delete process.env.RAINDROP_TOKEN;
+    const bridge = new RaindropBridge();
+    expect(await bridge.isAvailable()).toBe(false);
+    if (orig) process.env.RAINDROP_TOKEN = orig;
+  });
+
+  it("reports available when RAINDROP_TOKEN is set", async () => {
+    const orig = process.env.RAINDROP_TOKEN;
+    process.env.RAINDROP_TOKEN = "test_token";
+    const bridge = new RaindropBridge();
+    expect(await bridge.isAvailable()).toBe(true);
+    if (orig) process.env.RAINDROP_TOKEN = orig;
+    else delete process.env.RAINDROP_TOKEN;
   });
 });

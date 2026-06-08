@@ -14,6 +14,9 @@ sources:
   github_stars:
     enabled: true
     # Token from GITHUB_TOKEN env var (needs read:user scope)
+  raindrop:
+    enabled: true
+    # Token from RAINDROP_TOKEN env var (Settings > Integrations)
 
 # RSS feeds (direct, not via RSSHub)
 rss:

@@ -5,3 +5,4 @@ export { register, get, list, listAvailable, clear } from "./registry.js";
 export { VaultBridge } from "./vault-bridge.js";
 export { RssBridge } from "./rss-bridge.js";
 export { GithubStarsBridge } from "./github-stars-bridge.js";
+export { RaindropBridge } from "./raindrop-bridge.js";

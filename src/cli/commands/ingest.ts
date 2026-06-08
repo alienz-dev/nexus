@@ -53,6 +53,16 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
         }
         break;
       }
+      case "raindrop": {
+        const bridge = new ingest.RaindropBridge();
+        if (await bridge.isAvailable()) {
+          adapters.push(bridge);
+          ingest.register(bridge);
+        } else {
+          console.log(chalk.yellow(`  raindrop: RAINDROP_TOKEN not set, skipping`));
+        }
+        break;
+      }
       default:
         console.log(chalk.yellow(`  Unknown source: ${name}, skipping`));
     }
