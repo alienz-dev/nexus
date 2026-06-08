@@ -2,7 +2,7 @@
 import type Database from "better-sqlite3";
 import type { SearchResult } from "./types.js";
 import type { LanceVectorStore } from "./vectors.js";
-import { embedText } from "../ingest/embeddings.js";
+import { embedTextSync } from "../ingest/embeddings.js";
 
 export interface SearchWeights {
   bm25: number;
@@ -59,7 +59,7 @@ export class UnifiedSearch {
   async vectorSearch(query: string, limit = 20): Promise<SearchResult[]> {
     if (!this.vectorStore) return [];
 
-    const vector = embedText(query);
+    const vector = embedTextSync(query);
     const results = await this.vectorStore.search(vector, limit);
 
     return results.map((r) => ({
@@ -97,11 +97,9 @@ export class UnifiedSearch {
   async search(options: SearchOptions): Promise<SearchResult[]> {
     const limit = options.limit ?? 20;
 
-    // Run BM25 and vector search in parallel
-    const [bm25Results, vectorResults] = await Promise.all([
-      Promise.resolve(this.bm25Search(options.query, limit)),
-      this.vectorSearch(options.query, limit),
-    ]);
+    // Run BM25 and vector search
+    const bm25Results = this.bm25Search(options.query, limit);
+    const vectorResults = await this.vectorSearch(options.query, limit);
 
     const graphResults: SearchResult[] = []; // Phase 3: LightRAG
 

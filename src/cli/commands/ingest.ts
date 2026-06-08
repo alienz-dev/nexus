@@ -6,7 +6,7 @@ import { initDb, closeDb } from "../../lib/db.js";
 import { ContentIndexer } from "../../knowledge/indexer.js";
 import { EntityStore } from "../../knowledge/store.js";
 import { LanceVectorStore } from "../../knowledge/vectors.js";
-import { embedBatch } from "../../ingest/embeddings.js";
+import { embedTextSync, getEmbeddingDim, isModelLoaded } from "../../ingest/embeddings.js";
 import { queueEnrichment, initEnrichmentTable } from "../../ingest/enrichment-worker.js";
 import * as ingest from "../../ingest/index.js";
 
@@ -16,12 +16,15 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
   const indexer = new ContentIndexer(db);
 
   // Initialize vector store and entity store
-  const vectorStore = new LanceVectorStore(config.database.vectors);
+  const dim = getEmbeddingDim();
+  const modelStatus = isModelLoaded() ? chalk.green("BGE-M3") : chalk.yellow("stub");
+  const vectorStore = new LanceVectorStore(config.database.vectors, dim);
   await vectorStore.init();
   const entityStore = new EntityStore(db);
   initEnrichmentTable(db);
 
   console.log(chalk.bold("\nNexus PKMS Ingestion\n"));
+  console.log(chalk.dim(`Embeddings: ${modelStatus} (${dim}-dim)`));
 
   // Register adapters for configured sources
   const adapters: ingest.BridgeAdapter[] = [];
@@ -93,11 +96,10 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
       // Index vectors for new/updated items
       const toEmbed = items.filter((_, i) => i < result.added + result.updated);
       if (toEmbed.length > 0) {
-        const vectors = embedBatch(toEmbed.map((item) => `${item.title} ${item.content}`));
-        await vectorStore.upsert(toEmbed.map((item, i) => ({
+        await vectorStore.upsert(toEmbed.map((item) => ({
           id: item.id,
           source: item.source,
-          vector: vectors[i],
+          vector: embedTextSync(`${item.title} ${item.content}`),
           content: item.content.slice(0, 1000),
           title: item.title,
         })));

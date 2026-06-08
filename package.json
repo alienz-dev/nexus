@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.0.4",
+    "@huggingface/transformers": "^4.2.0",
     "@lancedb/lancedb": "^0.15.0",
     "@mastra/core": "^0.10.0",
     "better-sqlite3": "^12.10.0",

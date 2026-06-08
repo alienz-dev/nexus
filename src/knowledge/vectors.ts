@@ -21,9 +21,11 @@ export class LanceVectorStore {
   private dbPath: string;
   private db: lancedb.Connection | null = null;
   private tableName = "feed_item_vectors";
+  private vectorDim: number;
 
-  constructor(dbPath: string) {
+  constructor(dbPath: string, vectorDim = 384) {
     this.dbPath = dbPath;
+    this.vectorDim = vectorDim;
   }
 
   /** Initialize the LanceDB database and ensure the table exists. */
@@ -39,7 +41,7 @@ export class LanceVectorStore {
     const tables = await this.db.tableNames();
     if (!tables.includes(this.tableName)) {
       await this.db.createTable(this.tableName, [
-        { id: "__placeholder__", source: "__init__", vector: new Array(1024).fill(0), content: "", title: "" },
+        { id: "__placeholder__", source: "__init__", vector: new Array(this.vectorDim).fill(0), content: "", title: "" },
       ]);
       // Delete the placeholder row
       const table = await this.db.openTable(this.tableName);
