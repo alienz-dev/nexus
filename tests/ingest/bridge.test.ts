@@ -2,6 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { RssBridge } from "../../src/ingest/rss-bridge.js";
 import { VaultBridge } from "../../src/ingest/vault-bridge.js";
+import { GithubStarsBridge } from "../../src/ingest/github-stars-bridge.js";
 import * as registry from "../../src/ingest/registry.js";
 
 describe("bridge adapter registry", () => {
@@ -48,5 +49,24 @@ describe("VaultBridge", () => {
   it("reports unavailable for nonexistent directory", async () => {
     const bridge = new VaultBridge("/nonexistent/path");
     expect(await bridge.isAvailable()).toBe(false);
+  });
+});
+
+describe("GithubStarsBridge", () => {
+  it("reports unavailable when GITHUB_TOKEN is not set", async () => {
+    const orig = process.env.GITHUB_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+    const bridge = new GithubStarsBridge();
+    expect(await bridge.isAvailable()).toBe(false);
+    if (orig) process.env.GITHUB_TOKEN = orig;
+  });
+
+  it("reports available when GITHUB_TOKEN is set", async () => {
+    const orig = process.env.GITHUB_TOKEN;
+    process.env.GITHUB_TOKEN = "ghp_test123";
+    const bridge = new GithubStarsBridge();
+    expect(await bridge.isAvailable()).toBe(true);
+    if (orig) process.env.GITHUB_TOKEN = orig;
+    else delete process.env.GITHUB_TOKEN;
   });
 });

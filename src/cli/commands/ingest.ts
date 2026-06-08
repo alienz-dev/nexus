@@ -42,6 +42,17 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
         ingest.register(bridge);
         break;
       }
+      case "github_stars":
+      case "github-stars": {
+        const bridge = new ingest.GithubStarsBridge();
+        if (await bridge.isAvailable()) {
+          adapters.push(bridge);
+          ingest.register(bridge);
+        } else {
+          console.log(chalk.yellow(`  github-stars: GITHUB_TOKEN not set, skipping`));
+        }
+        break;
+      }
       default:
         console.log(chalk.yellow(`  Unknown source: ${name}, skipping`));
     }

@@ -27,6 +27,11 @@ export async function watchCommand(options?: { interval?: number }): Promise<voi
       const projectPath = src.path;
       switch (name) {
         case "vault": adapters.push(new ingest.VaultBridge(projectPath)); break;
+        case "github_stars": case "github-stars": {
+          const gh = new ingest.GithubStarsBridge();
+          if (await gh.isAvailable()) adapters.push(gh);
+          break;
+        }
       }
     }
 

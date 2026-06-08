@@ -11,6 +11,9 @@ sources:
   vault:
     path: /path/to/your/obsidian-vault
     enabled: true
+  github_stars:
+    enabled: true
+    # Token from GITHUB_TOKEN env var (needs read:user scope)
 
 # RSS feeds (direct, not via RSSHub)
 rss:
