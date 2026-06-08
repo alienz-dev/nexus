@@ -1,89 +1,116 @@
 # Nexus PKMS — Status
 
 **Version:** 0.1.0
-**Phase:** Complete (all 5 phases + enhancements)
 **Last Updated:** 2026-06-08
 
 ## What's Working
 
-### CLI (14 commands)
+### Sources (4 bridges)
+- [x] VaultBridge — Obsidian `.md` files with frontmatter + wikilink extraction
+- [x] RssBridge — RSS/Atom feeds + RSSHub integration
+- [x] GithubStarsBridge — GitHub starred repos via API (`GITHUB_TOKEN`)
+- [x] RaindropBridge — Raindrop.io bookmarks + highlights (`RAINDROP_TOKEN`)
+
+### Ingestion Pipeline
+- [x] Differential content indexing (MD5 hash comparison)
+- [x] Real MiniLM-L6-v2 embeddings (384-dim) via transformers.js
+- [x] LanceDB vector store with cosine similarity search
+- [x] Two-phase enrichment (ingest queues → enrich processes)
+
+### Enrichment
+- [x] Entity extraction: rules-based (~70% coverage) + LLM (DeepSeek) for long-tail
+- [x] Fact extraction: proficiency levels, experience years, usage frequency
+- [x] Co-occurrence relations between entities in same content
+- [x] Canonical entity resolution (deduplication with aliases)
+
+### Search
+- [x] BM25 keyword search on content_index
+- [x] Vector semantic search via MiniLM embeddings
+- [x] Graph search via entity co-occurrence relations
+- [x] Reciprocal Rank Fusion (RRF) combining all three signals
+- [x] Wikilink boost — notes linked from top results get relevance bump
+
+### Agents
+- [x] Gap Detector — skill gaps vs demand signals
+- [x] Knowledge Auditor — orphans, duplicates, missing details
+- [x] Path Planner — learning paths from gaps
+
+### CLI (16 commands)
 - [x] `nexus status` — source counts, vector count, enrichment stats
-- [x] `nexus search <query>` — BM25 + vector RRF fusion
+- [x] `nexus search <query>` — BM25 + vector + graph RRF
 - [x] `nexus ask <question>` — Q&A with context from knowledge base
-- [x] `nexus ingest [--source=...]` — ingestion from 5 sources + RSSHub
-- [x] `nexus enrich [--limit=N]` — entity extraction pipeline
+- [x] `nexus ingest [--source=...]` — ingestion from all sources
+- [x] `nexus enrich [--limit=N]` — entity + fact extraction pipeline
 - [x] `nexus digest [--period=daily|weekly]` — terminal summary
-- [x] `nexus gaps` — skill gap analysis (canonical deduplication)
+- [x] `nexus gaps` — skill gap analysis
 - [x] `nexus resolve --seed/--lookup` — canonical entity registry
 - [x] `nexus audit` — knowledge graph health check
 - [x] `nexus graph` — entity-relation statistics
-- [x] `nexus memory -r/-q/-l` — agent memory (remember/recall/list)
+- [x] `nexus memory -r/-q/-l` — agent memory
 - [x] `nexus watch [-i N]` — live feed monitoring
-- [x] `nexus serve` — Hono REST API on :3777
+- [x] `nexus export [-f anki|json|csv|markdown]` — export formats
+- [x] `nexus sync [-t dir]` — sync to Obsidian vault
+- [x] `nexus serve` — REST API on configured port
+- [x] `nexus --config <path>` — global config flag
+
+### Consumer APIs
+- [x] REST API (Hono) — search, gaps, feedback, status
+- [x] MCP server — 6 tools for Claude Code integration
+- [x] Export — Anki TSV, JSON, CSV, Markdown
+- [x] Sync — Obsidian-compatible notes with YAML frontmatter
 
 ### Infrastructure
-- [x] 5 bridge adapters: ai-feeds, job-hunter, email-hub, vault, RSS
-- [x] RSSHub integration (1000+ source routes)
-- [x] Content indexer with MD5 differential updates (Khoj pattern)
-- [x] LanceDB vector store (1024-dim, BM25 + vector RRF)
-- [x] Entity extraction (rules + LLM, 1508 entities)
-- [x] Entity resolution (canonical ID registry, 25 seeded skills)
-- [x] Enrichment worker (async, batched)
-- [x] Tana-style supertag schemas (5 types)
-- [x] Knowledge graph (entity-relation store)
-- [x] Agent memory (remember/recall/forget/improve with decay)
-- [x] Telegram digest (daily/weekly via Bot API)
-- [x] REST API (4 endpoints) + MCP server (3 tools)
-- [x] SDD: 20 issues (all closed), 1 spec, constitution, 14 ADRs
-- [x] 31 tests pass, zero type errors
-
-### Stats
-- 6681 items indexed (408 ai-feeds, 322 jobs, 32 emails, 5842 vault, 77 RSS)
-- 6681 vectors
-- 1508 entities (980 skills, 175 companies, 253 roles)
-- 25 canonical skills with aliases
-
-## Future Enhancements
-
-- [ ] Real BGE-M3 embeddings (replace deterministic stub)
-- [ ] Mastra agent orchestration (currently direct function calls)
-- [ ] Leiden community detection for knowledge graph
-- [ ] Scheduled cron jobs (daemon mode)
-- [ ] Web dashboard (React/Vue)
+- [x] All local-first: SQLite + LanceDB, no external DB
+- [x] Config via `nexus.yaml` with Zod validation
+- [x] Tilde expansion (`~`) centralized in config module
+- [x] `--config` flag + `NEXUS_CONFIG` env var
+- [x] GitHub Actions CI (typecheck + tests)
+- [x] 41 tests passing (unit + e2e pipeline)
 
 ## Architecture
 
 ```
-┌─────────────┐  ┌──────────────┐  ┌──────────────┐
-│  ai-feeds   │  │  job-hunter  │  │  email-hub   │
-└──────┬──────┘  └──────┬───────┘  └──────┬───────┘
-       │                │                  │
-       └────────┬───────┴──────────┬───────┘
-                │                  │
-         ┌──────▼──────┐   ┌──────▼──────┐
-         │   vault     │   │  RSS feeds  │
-         └──────┬──────┘   └──────┬──────┘
-                │                  │
-       ┌────────▼──────────────────▼────────┐
-       │          Bridge Adapters           │
-       └────────────────┬───────────────────┘
-                        │
-       ┌────────────────▼───────────────────┐
-       │     Knowledge Layer (SQLite +      │
-       │     LanceDB + LightRAG graph)      │
-       └────────────────┬───────────────────┘
-                        │
-       ┌────────────────▼───────────────────┐
-       │      Agent Layer (Mastra)          │
-       │  gap-detector │ consolidator │     │
-       │  path-planner │                 │  │
-       └────────────────┬───────────────────┘
-                        │
-       ┌────────────────▼───────────────────┐
-       │      Consumer API (Hono + MCP)     │
-       └────────────────────────────────────┘
+  Sources:  Vault  |  RSS  |  GitHub Stars  |  Raindrop
+                  ↓
+  Bridge Adapters → FeedItem[]
+                  ↓
+  ┌───────────────┴───────────────┐
+  │  ContentIndexer (SQLite)      │  MD5 differential
+  │  LanceVectorStore (LanceDB)   │  384-dim MiniLM
+  │  Enrichment Queue (SQLite)    │  two-phase
+  └───────────────┬───────────────┘
+                  ↓
+  ┌───────────────┴───────────────┐
+  │  Entity Extraction (rules+LLM)│
+  │  Fact Extraction (patterns)   │
+  │  Co-occurrence Relations      │
+  │  Entity Resolution (aliases)  │
+  └───────────────┬───────────────┘
+                  ↓
+  ┌───────────────┴───────────────┐
+  │  Search (BM25+Vector+Graph)   │  RRF fusion + wikilink boost
+  │  Gap Detector                 │
+  │  Auditor                      │
+  │  Path Planner                 │
+  └───────────────┬───────────────┘
+                  ↓
+  Output:  CLI  |  REST API  |  MCP  |  Export  |  Sync
 ```
 
-## Decisions
+## Data Stores
 
-See DECISIONS.md for 14 architecture decision records.
+| Store | Engine | Tables |
+|-------|--------|--------|
+| Content Index | SQLite | `content_index`, `enrichment_jobs` |
+| Entity Store | SQLite | `entities`, `relations`, `facts` |
+| Entity Resolver | SQLite | `canonical_entities` |
+| Agent Memory | SQLite | `memories` |
+| Vector Store | LanceDB | `feed_item_vectors` (384-dim) |
+
+## Future Enhancements
+
+- [ ] GitHub Stars bridge: OAuth flow (currently token-only)
+- [ ] LLM-based fact extraction (DeepSeek for complex predicates)
+- [ ] Web dashboard (if needed — CLI + MCP + API may be sufficient)
+- [ ] Scheduled cron jobs (daemon mode)
+- [ ] Leiden community detection (at 5000+ entities)

@@ -16,7 +16,7 @@
   "bin": {
     "nexus": "dist/cli/index.js"
   },
-  "description": "Personal Knowledge Management System Hub — connects your vault and RSS feeds into a unified knowledge graph with search, entity extraction, and agent orchestration",
+  "description": "Personal Knowledge Management System Hub — connects vault, RSS, GitHub stars, and Raindrop bookmarks into a unified knowledge graph with search, entity extraction, and agent orchestration",
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
