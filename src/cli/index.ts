@@ -13,6 +13,8 @@ import { memoryCommand } from "./commands/memory.js";
 import { askCommand } from "./commands/ask.js";
 import { digestCommand } from "./commands/digest.js";
 import { watchCommand } from "./commands/watch.js";
+import { exportCommand } from "./commands/export.js";
+import { syncCommand } from "./commands/sync.js";
 
 const program = new Command();
 
@@ -90,5 +92,19 @@ program
   .description("Live feed monitoring with periodic ingestion")
   .option("-i, --interval <minutes>", "Polling interval in minutes", "5")
   .action((opts) => watchCommand({ interval: parseInt(opts.interval, 10) }));
+
+program
+  .command("export")
+  .description("Export knowledge to various formats")
+  .option("-f, --format <format>", "Export format: anki, markdown, json, csv", "anki")
+  .option("-o, --output <dir>", "Output directory")
+  .option("-t, --type <type>", "Entity type to export")
+  .action((opts) => exportCommand({ format: opts.format as any, output: opts.output, type: opts.type }));
+
+program
+  .command("sync")
+  .description("Sync nexus data to Obsidian vault")
+  .option("-t, --target <dir>", "Target directory (default: vault/nexus/)")
+  .action((opts) => syncCommand({ target: opts.target }));
 
 program.parse();
