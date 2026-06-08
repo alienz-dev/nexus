@@ -1,4 +1,5 @@
-/** Bridge adapter for ai-feeds project — reads from its SQLite database. */
+/** Bridge adapter for ai-feeds project — reads from its SQLite database.
+ *  Maps papers table to FeedItem with rich metadata from scoring system. */
 import Database from "better-sqlite3";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -23,17 +24,48 @@ export class AiFeedsBridge implements BridgeAdapter {
         ? `SELECT * FROM papers WHERE first_seen_at > ? ORDER BY first_seen_at DESC`
         : `SELECT * FROM papers ORDER BY first_seen_at DESC LIMIT 500`;
       const rows = since ? db.prepare(query).all(since) : db.prepare(query).all();
-      return (rows as any[]).map((row) => ({
-        id: row.id ?? row.dedup_key,
-        source: "ai-feeds",
-        title: row.title ?? "",
-        content: row.abstract ?? "",
-        url: row.url ?? row.pdf_url ?? undefined,
-        timestamp: row.published ?? row.first_seen_at ?? new Date().toISOString(),
-        score: row.relevance_score ?? undefined,
-        tags: row.categories ? (typeof row.categories === "string" ? row.categories.split(",").map((s: string) => s.trim()) : []) : [],
-        entities: row.authors ? (typeof row.authors === "string" ? row.authors.split(",").map((s: string) => s.trim()) : []) : [],
-      }));
+
+      return (rows as any[]).map((row) => {
+        // Build rich content from title + abstract + scoring context
+        const parts = [row.title, row.abstract];
+        if (row.score_explanation) parts.push(`Score reason: ${row.score_explanation}`);
+        const content = parts.filter(Boolean).join("\n\n");
+
+        // Build tags from categories, primary_category, sources, score_interests
+        const tags: string[] = [];
+        if (row.primary_category) tags.push(row.primary_category);
+        if (row.categories) {
+          const cats = typeof row.categories === "string" ? row.categories.split(",") : [];
+          tags.push(...cats.map((s: string) => s.trim()).filter(Boolean));
+        }
+        if (row.sources) {
+          const srcs = typeof row.sources === "string" ? row.sources.split(",") : [];
+          tags.push(...srcs.map((s: string) => s.trim()).filter(Boolean));
+        }
+        if (row.score_interests) {
+          const interests = typeof row.score_interests === "string" ? row.score_interests.split(",") : [];
+          tags.push(...interests.map((s: string) => s.trim()).filter(Boolean));
+        }
+
+        // Entities from authors
+        const entities: string[] = [];
+        if (row.authors) {
+          const authors = typeof row.authors === "string" ? row.authors.split(",") : [];
+          entities.push(...authors.map((s: string) => s.trim()).filter(Boolean));
+        }
+
+        return {
+          id: row.id ?? row.dedup_key,
+          source: "ai-feeds",
+          title: row.title ?? "",
+          content,
+          url: row.url ?? row.pdf_url ?? undefined,
+          timestamp: row.published ?? row.first_seen_at ?? new Date().toISOString(),
+          score: row.relevance_score ?? undefined,
+          tags,
+          entities,
+        };
+      });
     } finally {
       db.close();
     }

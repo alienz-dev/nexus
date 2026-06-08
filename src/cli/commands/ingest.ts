@@ -91,10 +91,21 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
     const spinner = ora(`Ingesting from ${adapter.name}...`).start();
     try {
       const items = await adapter.fetch();
-      const result = indexer.index(items);
+
+      // Also fetch learning resources from job-hunter
+      let allItems = items;
+      if (adapter.name === "job-hunter" && "fetchLearningResources" in adapter) {
+        try {
+          const learningItems = await (adapter as any).fetchLearningResources();
+          allItems = [...items, ...learningItems];
+          spinner.text = `Ingesting from ${adapter.name} (${items.length} listings + ${learningItems.length} learning resources)...`;
+        } catch { /* learning resources optional */ }
+      }
+
+      const result = indexer.index(allItems);
 
       // Index vectors for new/updated items
-      const toEmbed = items.filter((_, i) => i < result.added + result.updated);
+      const toEmbed = allItems.filter((_, i) => i < result.added + result.updated);
       if (toEmbed.length > 0) {
         await vectorStore.upsert(toEmbed.map((item) => ({
           id: item.id,
@@ -106,12 +117,12 @@ export async function ingestCommand(options?: { source?: string }): Promise<void
       }
 
       // Queue new items for entity extraction
-      const newItems = items.slice(0, result.added + result.updated);
+      const newItems = allItems.slice(0, result.added + result.updated);
       if (newItems.length > 0) {
         queueEnrichment(db, newItems);
       }
 
-      spinner.succeed(`${adapter.name}: +${result.added} ~${result.updated} =${result.skipped} (${items.length} total, ${toEmbed.length} vectors, ${newItems.length} queued for enrichment)`);
+      spinner.succeed(`${adapter.name}: +${result.added} ~${result.updated} =${result.skipped} (${allItems.length} total, ${toEmbed.length} vectors, ${newItems.length} queued for enrichment)`);
     } catch (e: any) {
       spinner.fail(`${adapter.name}: ${e.message}`);
     }
