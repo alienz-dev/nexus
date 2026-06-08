@@ -1,6 +1,7 @@
 /** Entity extraction orchestrator — rules first, LLM for unknowns.
  *  Implements the hybrid extraction strategy from ADR-007. */
-import { extractEntities as extractRules, ruleConfidence } from "./rules.js";
+import { extractEntities as extractRules, ruleConfidence, extractFacts as extractFactsRules } from "./rules.js";
+import type { ExtractedFact } from "./rules.js";
 import { extractEntitiesLLM } from "./llm.js";
 
 export interface ExtractedEntity {
@@ -29,6 +30,11 @@ export async function extractEntities(text: string): Promise<ExtractedEntity[]> 
 
   // Merge and deduplicate
   return mergeEntities(ruleEntities, llmEntities);
+}
+
+/** Extract facts (predicates) from text using rules. */
+export function extractFacts(text: string): ExtractedFact[] {
+  return extractFactsRules(text);
 }
 
 /** Merge rule-based and LLM entities, preferring higher confidence. */

@@ -50,7 +50,7 @@ const testItems: FeedItem[] = [
     id: "notes/python.md",
     source: "vault",
     title: "Python Learning",
-    content: "Python is great for data science and machine learning. I use TypeScript for frontend and Python for backend.",
+    content: "Python is great for data science and machine learning. I use TypeScript for frontend and Python for backend. Python proficiency: 8/10.",
     url: undefined,
     timestamp: "2026-03-05T10:00:00Z",
     tags: ["python", "data-science"],
@@ -102,10 +102,11 @@ describe("E2E Pipeline", () => {
     expect(queued).toBe(4);
   });
 
-  it("step 3: enrichment extracts entities and creates relations", async () => {
+  it("step 3: enrichment extracts entities, relations, and facts", async () => {
     const result = await processEnrichment(db, store, 10);
     expect(result.processed).toBe(4);
     expect(result.entitiesExtracted).toBeGreaterThan(0);
+    expect(result.factsExtracted).toBeGreaterThan(0);
     expect(result.errors).toBe(0);
 
     // Verify entities were created
@@ -116,6 +117,17 @@ describe("E2E Pipeline", () => {
     const graph = new KnowledgeGraph(store, db);
     const stats = graph.stats();
     expect(stats.relations).toBeGreaterThan(0);
+
+    // Verify facts were extracted (Python proficiency: 8/10)
+    const python = store.findByName("python", "skill");
+    expect(python).toBeTruthy();
+    if (python) {
+      const facts = store.getFacts(python.id);
+      expect(facts.length).toBeGreaterThan(0);
+      const proficiency = facts.find((f) => f.predicate === "proficiency");
+      expect(proficiency).toBeTruthy();
+      expect(proficiency?.value).toBe(8);
+    }
   });
 
   it("step 4: entity resolution works", () => {

@@ -24,7 +24,7 @@ export async function enrichCommand(options?: { limit?: number }): Promise<void>
 
   const spinner = ora(`Processing ${Math.min(stats.pending, options?.limit ?? 50)} jobs...`).start();
   const result = await processEnrichment(db, entityStore, options?.limit ?? 50);
-  spinner.succeed(`Processed: ${result.processed} | Entities: ${result.entitiesExtracted} | Errors: ${result.errors}`);
+  spinner.succeed(`Processed: ${result.processed} | Entities: ${result.entitiesExtracted} | Facts: ${result.factsExtracted} | Errors: ${result.errors}`);
 
   const afterStats = enrichmentStats(db);
   console.log(chalk.gray("\n" + "─".repeat(50)));

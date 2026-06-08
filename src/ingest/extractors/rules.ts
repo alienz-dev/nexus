@@ -91,3 +91,70 @@ export function ruleConfidence(entities: ExtractedEntity[]): number {
   // More entities found = higher confidence that rules covered this text well
   return Math.min(0.9, entities.length * 0.15);
 }
+
+export interface ExtractedFact {
+  entityName: string;
+  predicate: string;
+  value: number | string;
+  confidence: number;
+  source: "rules";
+}
+
+/** Extract structured facts from text using pattern matching. */
+export function extractFacts(text: string): ExtractedFact[] {
+  const facts: ExtractedFact[] = [];
+  const lower = text.toLowerCase();
+
+  // Proficiency/level patterns: "TypeScript proficiency: 7", "Python level 8/10", "JavaScript: 6/10"
+  const proficiencyRegex = /(\w[\w.+#-]*)\s+(?:proficiency|level|skill level)[:\s]+(\d{1,2})(?:\s*\/\s*10)?/gi;
+  for (const match of lower.matchAll(proficiencyRegex)) {
+    const skill = normalizeSkillName(match[1]);
+    const level = parseInt(match[2], 10);
+    if (skill && level >= 0 && level <= 10) {
+      facts.push({ entityName: skill, predicate: "proficiency", value: level, confidence: 0.85, source: "rules" });
+    }
+  }
+
+  // Also match: "Skill: N/10" pattern (e.g., in tables or lists)
+  const tableRegex = /(\w[\w.+#-]*)[:\s]+(\d{1,2})\s*\/\s*10/gi;
+  for (const match of lower.matchAll(tableRegex)) {
+    const skill = normalizeSkillName(match[1]);
+    const level = parseInt(match[2], 10);
+    if (skill && level >= 0 && level <= 10 && !facts.some((f) => f.entityName === skill && f.predicate === "proficiency")) {
+      facts.push({ entityName: skill, predicate: "proficiency", value: level, confidence: 0.7, source: "rules" });
+    }
+  }
+
+  // Experience years: "5 years of Python", "TypeScript (3 years)", "10+ years Java"
+  const yearsRegex = /(\d{1,2})\+?\s*(?:years?\s+(?:of\s+)?|yrs?\s+(?:of\s+)?)(\w[\w.+#-]*)|(\w[\w.+#-]*)\s*\((\d{1,2})\+?\s*(?:years?|yrs?)\)/gi;
+  for (const match of text.matchAll(yearsRegex)) {
+    const skill = normalizeSkillName(match[2] ?? match[3]);
+    const years = parseInt(match[1] ?? match[4], 10);
+    if (skill && years > 0 && years <= 30) {
+      facts.push({ entityName: skill, predicate: "experience_years", value: years, confidence: 0.8, source: "rules" });
+    }
+  }
+
+  // Frequency: "use React daily", "daily driver: TypeScript", "use Python weekly"
+  const freqRegex = /(?:use|using)\s+(\w[\w.+#-]+)\s+(daily|weekly|monthly|rarely)|(?:daily|weekly)\s+(?:driver|use)[:\s]+(\w[\w.+#-]+)/gi;
+  for (const match of lower.matchAll(freqRegex)) {
+    const skill = normalizeSkillName(match[1] ?? match[3]);
+    const freq = match[2] ?? (match[0].includes("daily") ? "daily" : "weekly");
+    if (skill) {
+      facts.push({ entityName: skill, predicate: "frequency", value: freq, confidence: 0.7, source: "rules" });
+    }
+  }
+
+  return facts;
+}
+
+/** Normalize skill name to match TECH_SKILLS format. */
+function normalizeSkillName(name: string): string | null {
+  const normalized = name.toLowerCase().trim();
+  // Check if it's a known skill or looks like a valid skill name
+  if (normalized.length < 2 || normalized.length > 30) return null;
+  // Filter out common false positives
+  const stopWords = new Set(["the", "and", "for", "with", "from", "this", "that", "have", "been", "using"]);
+  if (stopWords.has(normalized)) return null;
+  return normalized;
+}

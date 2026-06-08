@@ -2,12 +2,13 @@
  *  Runs asynchronously after minimal sync ingestion (two-phase pattern, ADR-006). */
 import type Database from "better-sqlite3";
 import type { FeedItem } from "./types.js";
-import { extractEntities } from "./extractors/orchestrator.js";
+import { extractEntities, extractFacts } from "./extractors/orchestrator.js";
 import { EntityStore } from "../knowledge/store.js";
 
 export interface EnrichmentResult {
   processed: number;
   entitiesExtracted: number;
+  factsExtracted: number;
   errors: number;
 }
 
@@ -59,13 +60,16 @@ export async function processEnrichment(
 
   let processed = 0;
   let entitiesExtracted = 0;
+  let factsExtracted = 0;
   let errors = 0;
 
   for (const job of pending) {
     try {
-      const entities = await extractEntities(`${job.title} ${job.content}`);
+      const text = `${job.title} ${job.content}`;
+      const entities = await extractEntities(text);
+      const facts = extractFacts(text);
 
-      // Store extracted entities and create co-occurrence relations
+      // Store extracted entities, create co-occurrence relations, and store facts
       const storeTx = db.transaction(() => {
         const entityIds: string[] = [];
         for (const entity of entities) {
@@ -91,6 +95,23 @@ export async function processEnrichment(
             });
           }
         }
+
+        // Store extracted facts
+        for (const fact of facts) {
+          // Find the entity this fact belongs to
+          const entity = entityStore.findByName(fact.entityName, "skill");
+          if (entity) {
+            entityStore.addFact({
+              entityId: entity.id,
+              predicate: fact.predicate,
+              value: fact.value,
+              validFrom: new Date().toISOString(),
+              source: `${job.source}:${job.item_id}`,
+              confidence: fact.confidence,
+            });
+            factsExtracted++;
+          }
+        }
       });
       storeTx();
 
@@ -104,7 +125,7 @@ export async function processEnrichment(
     }
   }
 
-  return { processed, entitiesExtracted, errors };
+  return { processed, entitiesExtracted, factsExtracted, errors };
 }
 
 /** Get enrichment queue stats. */
