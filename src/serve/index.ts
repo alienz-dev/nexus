@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { loadConfig } from "../lib/config.js";
 import { initDb } from "../lib/db.js";
 import { EntityStore } from "../knowledge/store.js";
+import { EntityResolver } from "../knowledge/resolver.js";
 import { ContentIndexer } from "../knowledge/indexer.js";
 import { UnifiedSearch } from "../knowledge/search.js";
 import { GapDetector } from "../agents/gap-detector.js";
@@ -14,9 +15,10 @@ async function main() {
   const db = initDb(config.database.main);
 
   const store = new EntityStore(db);
+  const resolver = new EntityResolver(db);
   const indexer = new ContentIndexer(db);
   const search = new UnifiedSearch(db, config.search?.weights, config.search?.rrf_k);
-  const detector = new GapDetector(store, search);
+  const detector = new GapDetector(store, search, resolver);
 
   // Register bridge adapters
   const adapters: ingest.BridgeAdapter[] = [];
@@ -35,7 +37,7 @@ async function main() {
     ingest.register(rssBridge);
   }
 
-  const app = createApp({ search, indexer, store, detector, adapters });
+  const app = createApp({ search, indexer, store, detector, resolver, adapters });
   const port = config.server?.port ?? 3777;
   const host = config.server?.host ?? "localhost";
 
