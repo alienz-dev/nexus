@@ -3,6 +3,7 @@
 import { extractEntities as extractRules, ruleConfidence, extractFacts as extractFactsRules } from "./rules.js";
 import type { ExtractedFact } from "./rules.js";
 import { extractEntitiesLLM } from "./llm.js";
+import type { LLMClient } from "../../llm/client.js";
 
 export interface ExtractedEntity {
   name: string;
@@ -16,8 +17,9 @@ const CONFIDENCE_THRESHOLD = 0.5;
 /** Extract entities from text using hybrid strategy:
  *  1. Run rule-based extraction (fast, free)
  *  2. If confidence < threshold, send to LLM for long-tail entities
- *  3. Merge and deduplicate results */
-export async function extractEntities(text: string): Promise<ExtractedEntity[]> {
+ *  3. Merge and deduplicate results
+ *  @param client Optional LLM client for long-tail extraction. If not provided, only rules are used. */
+export async function extractEntities(text: string, client?: LLMClient): Promise<ExtractedEntity[]> {
   // Phase 1: Rule-based extraction
   const ruleEntities = extractRules(text);
   const confidence = ruleConfidence(ruleEntities);
@@ -25,7 +27,7 @@ export async function extractEntities(text: string): Promise<ExtractedEntity[]> 
   // Phase 2: LLM extraction if rules weren't confident enough
   let llmEntities: ExtractedEntity[] = [];
   if (confidence < CONFIDENCE_THRESHOLD) {
-    llmEntities = await extractEntitiesLLM(text);
+    llmEntities = await extractEntitiesLLM(text, client);
   }
 
   // Merge and deduplicate

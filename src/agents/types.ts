@@ -5,7 +5,7 @@ import { z } from "zod";
 export const AgentConfigSchema = z.object({
   name: z.string(),
   description: z.string(),
-  model: z.string().default("mimo-v2.5-pro"),
+  model: z.string().optional(),
   systemPrompt: z.string(),
   tools: z.array(z.string()).default([]),
   maxSteps: z.number().default(10),

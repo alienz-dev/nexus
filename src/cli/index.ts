@@ -21,7 +21,7 @@ const program = new Command();
 program
   .name("nexus")
   .description("Personal Knowledge Management System Hub")
-  .version("0.1.0")
+  .version("0.2.0")
   .option("-c, --config <path>", "Path to nexus.yaml config file");
 
 program

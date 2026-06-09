@@ -1,6 +1,6 @@
 /** nexus enrich — process pending entity extraction jobs. */
-import chalk from "chalk";
-import ora from "ora";
+import chalk from "../../lib/chalk.js";
+import ora from "../../lib/ora.js";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { EntityStore } from "../../knowledge/store.js";

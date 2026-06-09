@@ -27,7 +27,7 @@ const memory = new AgentMemory(db);
 
 const server = new McpServer({
   name: "nexus",
-  version: "0.1.0",
+  version: "0.2.0",
 });
 
 // Tool: nexus_search

@@ -1,5 +1,23 @@
 /** Structured logging for nexus. */
-import chalk from "chalk";
+import { createRequire } from "node:module";
+
+// Optional chalk — falls back to no-color if not installed
+let _chalk: any = null;
+let _chalkLoaded = false;
+
+function getChalk(): any {
+  if (_chalkLoaded) return _chalk;
+  _chalkLoaded = true;
+  try {
+    const require = createRequire(import.meta.url);
+    _chalk = require("chalk");
+  } catch {
+    _chalk = null;
+  }
+  return _chalk;
+}
+
+const identity = (s: string) => s;
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -10,12 +28,16 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
   error: 3,
 };
 
-const LEVEL_COLORS: Record<LogLevel, (s: string) => string> = {
-  debug: chalk.gray,
-  info: chalk.blue,
-  warn: chalk.yellow,
-  error: chalk.red,
-};
+function colorFor(level: LogLevel): (s: string) => string {
+  const c = getChalk();
+  if (!c) return identity;
+  switch (level) {
+    case "debug": return c.gray ?? identity;
+    case "info": return c.blue ?? identity;
+    case "warn": return c.yellow ?? identity;
+    case "error": return c.red ?? identity;
+  }
+}
 
 let minLevel: LogLevel = "info";
 
@@ -29,7 +51,7 @@ export function log(level: LogLevel, message: string, data?: Record<string, unkn
   if (LEVEL_PRIORITY[level] < LEVEL_PRIORITY[minLevel]) return;
 
   const timestamp = new Date().toISOString();
-  const color = LEVEL_COLORS[level];
+  const color = colorFor(level);
   const prefix = color(`[${level.toUpperCase()}]`);
   const suffix = data ? ` ${JSON.stringify(data)}` : "";
   console.log(`${timestamp} ${prefix} ${message}${suffix}`);

@@ -1,5 +1,5 @@
 /** nexus export — export knowledge to various formats. */
-import chalk from "chalk";
+import chalk from "../../lib/chalk.js";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadConfig } from "../../lib/config.js";

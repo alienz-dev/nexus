@@ -1,5 +1,5 @@
 /** nexus gaps — show skill gaps detected by comparing knowledge vs job market. */
-import chalk from "chalk";
+import chalk from "../../lib/chalk.js";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { EntityStore } from "../../knowledge/store.js";

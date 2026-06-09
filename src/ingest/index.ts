@@ -6,3 +6,4 @@ export { VaultBridge } from "./vault-bridge.js";
 export { RssBridge } from "./rss-bridge.js";
 export { GithubStarsBridge } from "./github-stars-bridge.js";
 export { RaindropBridge } from "./raindrop-bridge.js";
+export { EmailHubBridge } from "./email-hub-bridge.js";

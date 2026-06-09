@@ -20,7 +20,7 @@ export class RssBridge implements BridgeAdapter {
     for (const feedUrl of this.feeds) {
       try {
         const response = await fetch(feedUrl, {
-          headers: { "User-Agent": "nexus-pkms/0.1.0" },
+          headers: { "User-Agent": "nexus-pkms/0.2.0" },
           signal: AbortSignal.timeout(15000),
         });
         if (!response.ok) continue;

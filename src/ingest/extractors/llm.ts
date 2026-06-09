@@ -1,4 +1,5 @@
-/** LLM-based entity extraction — uses DeepSeek API for cases rules can't handle. */
+/** LLM-based entity extraction — uses the configured LLM client for cases rules can't handle. */
+import type { LLMClient } from "../../llm/client.js";
 
 export interface ExtractedEntity {
   name: string;
@@ -22,34 +23,21 @@ Focus on:
 
 Return ONLY the JSON array, no other text.`;
 
-/** Extract entities using LLM. Returns empty immediately if no API key configured. */
-export async function extractEntitiesLLM(text: string): Promise<ExtractedEntity[]> {
-  const apiKey = process.env.DEEPSEEK_API_KEY ?? process.env.LLM_API_KEY;
-  if (!apiKey) return []; // No API key — skip LLM extraction entirely
+/** Extract entities using the configured LLM client. Returns empty if no client provided. */
+export async function extractEntitiesLLM(text: string, client?: LLMClient): Promise<ExtractedEntity[]> {
+  if (!client) return [];
 
   try {
-    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: [
-          { role: "system", content: EXTRACTION_PROMPT },
-          { role: "user", content: text.slice(0, 4000) },
-        ],
-        temperature: 0.1,
-        max_tokens: 1000,
-      }),
-      signal: AbortSignal.timeout(30000),
+    const response = await client.complete({
+      messages: [
+        { role: "system", content: EXTRACTION_PROMPT },
+        { role: "user", content: text.slice(0, 4000) },
+      ],
+      temperature: 0.1,
+      max_tokens: 1000,
     });
 
-    if (!response.ok) return [];
-
-    const data = await response.json() as any;
-    const content = data.choices?.[0]?.message?.content ?? "";
+    const content = response.choices?.[0]?.message?.content ?? "";
     const parsed = JSON.parse(content);
     return Array.isArray(parsed) ? parsed.map((e: any) => ({
       name: e.name ?? "",

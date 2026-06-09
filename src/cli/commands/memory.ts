@@ -1,5 +1,5 @@
 /** nexus memory — manage agent memory (remember/recall/list). */
-import chalk from "chalk";
+import chalk from "../../lib/chalk.js";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { AgentMemory } from "../../knowledge/memory.js";

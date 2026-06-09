@@ -1,51 +1,85 @@
 {
   "name": "nexus",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "license": "MIT",
   "author": "ding",
   "keywords": [
     "knowledge-management",
-    "cli",
-    "mcp",
+    "knowledge-engine",
+    "pipeline",
+    "llm",
     "knowledge-graph",
-    "personal-knowledge",
-    "obsidian",
-    "second-brain"
+    "data-pipeline",
+    "structured-output"
   ],
+  "description": "Generalized knowledge engine SDK — ingest, process, and serve knowledge with LLM-powered pipelines",
+  "main": "dist/sdk/index.js",
+  "types": "dist/sdk/index.d.ts",
   "bin": {
     "nexus": "dist/cli/index.js"
   },
-  "description": "Personal Knowledge Management System Hub — connects vault, RSS, GitHub stars, and Raindrop bookmarks into a unified knowledge graph with search, entity extraction, and agent orchestration",
+  "exports": {
+    ".": {
+      "types": "./dist/sdk/index.d.ts",
+      "import": "./dist/sdk/index.js"
+    },
+    "./llm": {
+      "types": "./dist/llm/index.d.ts",
+      "import": "./dist/llm/index.js"
+    },
+    "./pipeline": {
+      "types": "./dist/pipeline/index.d.ts",
+      "import": "./dist/pipeline/index.js"
+    },
+    "./knowledge": {
+      "types": "./dist/knowledge/plugin.d.ts",
+      "import": "./dist/knowledge/plugin.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit --incremental",
     "dev": "tsx src/cli/index.ts",
-    "serve": "tsx src/serve/index.ts"
+    "serve": "tsx src/serve/index.ts",
+    "prepublishOnly": "npm run build && npm test"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "bottleneck": "^2.19.5",
+    "jsonrepair": "^3.12.0",
+    "node-cron": "^3.0.3",
+    "p-queue": "^8.0.1",
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.24.0"
+  },
+  "optionalDependencies": {
     "@hono/node-server": "^2.0.4",
     "@huggingface/transformers": "^4.2.0",
     "@lancedb/lancedb": "^0.15.0",
     "@mastra/core": "^0.10.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "better-sqlite3": "^12.10.0",
     "chalk": "^5.4.0",
     "commander": "^13.0.0",
     "gray-matter": "^4.0.3",
     "hono": "^4.7.0",
     "ora": "^8.0.0",
-    "yaml": "^2.9.0",
-    "zod": "^3.24.0"
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.0",
+    "@types/node-cron": "^3.0.11",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^3.1.0"

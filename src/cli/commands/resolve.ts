@@ -1,5 +1,5 @@
 /** nexus resolve — manage the canonical entity registry. */
-import chalk from "chalk";
+import chalk from "../../lib/chalk.js";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { EntityResolver } from "../../knowledge/resolver.js";

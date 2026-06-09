@@ -2,8 +2,17 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
+import { createRequire } from "node:module";
 import { z } from "zod";
-import { parse as parseYaml } from "yaml";
+
+// Optional yaml — falls back to JSON parse if not installed
+let parseYaml: ((input: string) => any) | null = null;
+try {
+  const require = createRequire(import.meta.url);
+  parseYaml = require("yaml").parse;
+} catch {
+  // yaml not available
+}
 
 const SourceSchema = z.object({
   path: z.string(),
@@ -27,9 +36,13 @@ const ConfigSchema = z.object({
     routes: z.array(z.string()).default([]),
   }).default({}),
   llm: z.object({
-    provider: z.string().default("mimo-gateway"),
-    model: z.string().default("mimo-v2.5-pro"),
-    fallback: z.string().default("deepseek"),
+    /** LLM API endpoint. Falls back to LLM_ENDPOINT env var. */
+    endpoint: z.string().optional(),
+    /** Model name. Falls back to LLM_MODEL env var. */
+    model: z.string().optional(),
+    /** API key. Falls back to LLM_API_KEY env var. */
+    apiKey: z.string().optional(),
+    maxRetries: z.number().default(2),
   }).default({}),
   server: z.object({
     port: z.number().default(3777),
@@ -41,8 +54,6 @@ const ConfigSchema = z.object({
     chat_id: z.string().default(""),
   }).default({}),
   search: z.object({
-    embedding_model: z.string().default("BAAI/bge-m3"),
-    reranker: z.string().default("BAAI/bge-reranker-v2-m3"),
     rrf_k: z.number().default(60),
     weights: z.object({
       bm25: z.number().default(0.4),
@@ -80,6 +91,9 @@ export function loadConfig(configPath?: string): NexusConfig {
 
   const raw = readFileSync(path, "utf-8");
   try {
+    if (!parseYaml) {
+      throw new Error("yaml package not installed. Run: npm install yaml");
+    }
     const parsed = parseYaml(raw);
     const config = ConfigSchema.parse(parsed);
     return expandConfigPaths(config);
@@ -89,7 +103,7 @@ export function loadConfig(configPath?: string): NexusConfig {
   }
 }
 
-/** Expand tildes in all path fields. */
+/** Expand tildes in all path fields and apply env var fallbacks. */
 function expandConfigPaths(config: NexusConfig): NexusConfig {
   const sources: Record<string, { path: string; db?: string; enabled: boolean }> = {};
   for (const [name, src] of Object.entries(config.sources)) {
@@ -101,6 +115,12 @@ function expandConfigPaths(config: NexusConfig): NexusConfig {
     database: {
       main: expandTilde(config.database.main),
       vectors: expandTilde(config.database.vectors),
+    },
+    llm: {
+      ...config.llm,
+      endpoint: process.env.LLM_ENDPOINT ?? config.llm.endpoint,
+      model: process.env.LLM_MODEL ?? config.llm.model,
+      apiKey: config.llm.apiKey ?? process.env.LLM_API_KEY,
     },
   };
 }

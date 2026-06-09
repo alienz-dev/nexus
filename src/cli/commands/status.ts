@@ -1,5 +1,5 @@
 /** nexus status — show all connected sources and counts. */
-import chalk from "chalk";
+import chalk from "../../lib/chalk.js";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { ContentIndexer } from "../../knowledge/indexer.js";

@@ -16,7 +16,7 @@ export function createStatusRoutes(indexer: ContentIndexer, adapters: BridgeAdap
     );
 
     return c.json({
-      version: "0.1.0",
+      version: "0.2.0",
       phase: "Foundation",
       indexed: indexer.count(),
       sources,

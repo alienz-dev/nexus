@@ -1,5 +1,5 @@
 /** nexus sync — sync nexus data to Obsidian vault. */
-import chalk from "chalk";
+import chalk from "../../lib/chalk.js";
 import { writeFileSync, mkdirSync, existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadConfig } from "../../lib/config.js";

@@ -22,8 +22,9 @@ export class RaindropBridge implements BridgeAdapter {
   readonly name = "raindrop";
   private token: string;
 
-  constructor() {
-    this.token = process.env.RAINDROP_TOKEN ?? "";
+  /** @param token Raindrop.io API token. Falls back to RAINDROP_TOKEN env var. */
+  constructor(token?: string) {
+    this.token = token ?? process.env.RAINDROP_TOKEN ?? "";
   }
 
   async isAvailable(): Promise<boolean> {

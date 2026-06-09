@@ -15,8 +15,9 @@ export class GithubStarsBridge implements BridgeAdapter {
   readonly name = "github-stars";
   private token: string;
 
-  constructor() {
-    this.token = process.env.GITHUB_TOKEN ?? "";
+  /** @param token GitHub personal access token. Falls back to GITHUB_TOKEN env var. */
+  constructor(token?: string) {
+    this.token = token ?? process.env.GITHUB_TOKEN ?? "";
   }
 
   async isAvailable(): Promise<boolean> {

@@ -1,5 +1,5 @@
 /** nexus search <query> — search across all connected sources. */
-import chalk from "chalk";
+import chalk from "../../lib/chalk.js";
 import { loadConfig } from "../../lib/config.js";
 import { initDb, closeDb } from "../../lib/db.js";
 import { UnifiedSearch } from "../../knowledge/search.js";
