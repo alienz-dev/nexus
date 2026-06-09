@@ -4,7 +4,9 @@ import { createRequire } from "node:module";
 let _chalk: any = null;
 try {
   const require = createRequire(import.meta.url);
-  _chalk = require("chalk");
+  const mod = require("chalk");
+  // chalk v5 is ESM-only — require() returns the module namespace; the instance is on .default
+  _chalk = mod.default ?? mod;
 } catch {
   // chalk not available
 }
