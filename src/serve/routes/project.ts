@@ -93,8 +93,9 @@ export function createProjectRoutes(
       return c.json({ error: "signal is required" }, 400);
     }
 
-    // Extract keywords from signal
-    const keywords = extractKeywords(signal);
+    // Extract keywords from signal (handle both string and object)
+    const signalText = typeof signal === "string" ? signal : signal.title ?? JSON.stringify(signal);
+    const keywords = extractKeywords(signalText);
 
     // Check if project has any of the keywords as capabilities
     const capabilities = analyzer.getCapabilities(name);
