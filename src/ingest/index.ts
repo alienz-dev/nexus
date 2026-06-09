@@ -7,3 +7,7 @@ export { RssBridge } from "./rss-bridge.js";
 export { GithubStarsBridge } from "./github-stars-bridge.js";
 export { RaindropBridge } from "./raindrop-bridge.js";
 export { EmailHubBridge } from "./email-hub-bridge.js";
+export { ProjectContextBridge } from "./project-context-bridge.js";
+export { ProjectContextAnalyzer } from "./project-context-analyzer.js";
+export type { ProjectContextConfig } from "./project-context-bridge.js";
+export type { ProjectAnalysis } from "./project-context-analyzer.js";

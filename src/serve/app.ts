@@ -13,6 +13,8 @@ import { createGapRoutes } from "./routes/gaps.js";
 import { createDigestRoutes } from "./routes/digest.js";
 import { createStatusRoutes } from "./routes/status.js";
 import { createFeedbackRoutes } from "./routes/feedback.js";
+import { createProjectRoutes } from "./routes/project.js";
+import type { ProjectContextAnalyzer } from "../ingest/project-context-analyzer.js";
 
 export interface AppContext {
   search: UnifiedSearch;
@@ -21,6 +23,7 @@ export interface AppContext {
   detector: GapDetector;
   resolver: EntityResolver;
   adapters: BridgeAdapter[];
+  projectAnalyzer?: ProjectContextAnalyzer;
 }
 
 /** Create and configure the Hono application. */
@@ -37,6 +40,11 @@ export function createApp(ctx: AppContext): Hono {
   app.route("/api/digest", createDigestRoutes(ctx.indexer));
   app.route("/api/status", createStatusRoutes(ctx.indexer, ctx.adapters));
   app.route("/api/feedback", createFeedbackRoutes(ctx.store, ctx.resolver, ctx.search, ctx.detector));
+
+  // Project context routes (optional)
+  if (ctx.projectAnalyzer) {
+    app.route("/api/projects", createProjectRoutes(ctx.store, ctx.projectAnalyzer));
+  }
 
   // Health check
   app.get("/health", (c) => c.json({ status: "ok" }));

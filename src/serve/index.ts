@@ -9,6 +9,7 @@ import { ContentIndexer } from "../knowledge/indexer.js";
 import { UnifiedSearch } from "../knowledge/search.js";
 import { GapDetector } from "../agents/gap-detector.js";
 import * as ingest from "../ingest/index.js";
+import { ProjectContextAnalyzer } from "../ingest/project-context-analyzer.js";
 
 async function main() {
   const config = loadConfig();
@@ -37,7 +38,14 @@ async function main() {
     ingest.register(rssBridge);
   }
 
-  const app = createApp({ search, indexer, store, detector, resolver, adapters });
+  const projectAnalyzer = new ProjectContextAnalyzer(store, {
+    debug: () => {},
+    info: (msg: string) => console.log(`[INFO] ${msg}`),
+    warn: (msg: string) => console.warn(`[WARN] ${msg}`),
+    error: (msg: string) => console.error(`[ERROR] ${msg}`),
+  });
+
+  const app = createApp({ search, indexer, store, detector, resolver, adapters, projectAnalyzer });
   const port = config.server?.port ?? 3777;
   const host = config.server?.host ?? "localhost";
 

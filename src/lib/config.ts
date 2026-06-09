@@ -1,6 +1,6 @@
 /** Configuration loading from nexus.yaml. */
 import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
 import { homedir } from "node:os";
 import { createRequire } from "node:module";
 import { z } from "zod";
@@ -96,7 +96,7 @@ export function loadConfig(configPath?: string): NexusConfig {
     }
     const parsed = parseYaml(raw);
     const config = ConfigSchema.parse(parsed);
-    return expandConfigPaths(config);
+    return expandConfigPaths(config, path);
   } catch (e) {
     console.warn(`Failed to parse config: ${e}, using defaults`);
     return ConfigSchema.parse({});
@@ -104,17 +104,27 @@ export function loadConfig(configPath?: string): NexusConfig {
 }
 
 /** Expand tildes in all path fields and apply env var fallbacks. */
-function expandConfigPaths(config: NexusConfig): NexusConfig {
+function expandConfigPaths(config: NexusConfig, configPath?: string): NexusConfig {
   const sources: Record<string, { path: string; db?: string; enabled: boolean }> = {};
   for (const [name, src] of Object.entries(config.sources)) {
     sources[name] = { ...src, path: expandTilde(src.path) };
   }
+
+  // Resolve relative database paths relative to config file location
+  const configDir = configPath ? dirname(configPath) : process.cwd();
+  const resolveRelative = (p: string) => {
+    if (p.startsWith("./") || p.startsWith("../")) {
+      return resolve(configDir, p);
+    }
+    return expandTilde(p);
+  };
+
   return {
     ...config,
     sources,
     database: {
-      main: expandTilde(config.database.main),
-      vectors: expandTilde(config.database.vectors),
+      main: resolveRelative(config.database.main),
+      vectors: resolveRelative(config.database.vectors),
     },
     llm: {
       ...config.llm,

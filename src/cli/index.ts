@@ -15,6 +15,7 @@ import { digestCommand } from "./commands/digest.js";
 import { watchCommand } from "./commands/watch.js";
 import { exportCommand } from "./commands/export.js";
 import { syncCommand } from "./commands/sync.js";
+import { projectCommand } from "./commands/project.js";
 
 const program = new Command();
 
@@ -107,5 +108,27 @@ program
   .description("Sync nexus data to Obsidian vault")
   .option("-t, --target <dir>", "Target directory (default: vault/nexus/)")
   .action((opts) => syncCommand({ target: opts.target }));
+
+program
+  .command("project")
+  .description("Manage project context in the knowledge graph")
+  .option("-a, --action <action>", "Action: list, show, add, capabilities, ingest", "list")
+  .option("-n, --name <name>", "Project name")
+  .option("-p, --path <path>", "Project path")
+  .option("-d, --description <desc>", "Project description")
+  .option("--tech-stack <stack>", "Tech stack (comma-separated)")
+  .option("--adopted-patterns <patterns>", "Adopted patterns (comma-separated)")
+  .option("--enhancement-areas <areas>", "Enhancement areas (comma-separated)")
+  .option("-m, --maturity <level>", "Maturity: prototype, beta, production", "prototype")
+  .action((opts) => projectCommand({
+    action: opts.action as any,
+    name: opts.name,
+    path: opts.path,
+    description: opts.description,
+    techStack: opts.techStack,
+    adoptedPatterns: opts.adoptedPatterns,
+    enhancementAreas: opts.enhancementAreas,
+    maturity: opts.maturity,
+  }));
 
 program.parse();
