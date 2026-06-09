@@ -11,3 +11,5 @@ export { ProjectContextBridge } from "./project-context-bridge.js";
 export { ProjectContextAnalyzer } from "./project-context-analyzer.js";
 export type { ProjectContextConfig } from "./project-context-bridge.js";
 export type { ProjectAnalysis } from "./project-context-analyzer.js";
+export { AdoptionFeedback } from "./adoption-feedback.js";
+export type { AdoptionFeedbackEntry } from "./adoption-feedback.js";

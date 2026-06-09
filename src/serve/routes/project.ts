@@ -4,16 +4,19 @@
  * GET  /api/projects              — list all projects
  * GET  /api/projects/:name        — show project details
  * GET  /api/projects/:name/capabilities — list project capabilities
- * POST /api/projects/:name/evaluate — evaluate adoption for a signal
+ * POST /api/projects/:name/evaluate — evaluate adoption for a signal (keyword-based)
+ * POST /api/projects/:name/evaluate-llm — evaluate adoption with LLM (requires LLM client)
  */
 
 import { Hono } from "hono";
 import type { EntityStore } from "../../knowledge/store.js";
 import type { ProjectContextAnalyzer } from "../../ingest/project-context-analyzer.js";
+import type { AdoptionEvaluator } from "../../agents/adoption-evaluator.js";
 
 export function createProjectRoutes(
   store: EntityStore,
-  analyzer: ProjectContextAnalyzer
+  analyzer: ProjectContextAnalyzer,
+  evaluator?: AdoptionEvaluator
 ): Hono {
   const app = new Hono();
 
@@ -122,6 +125,42 @@ export function createProjectRoutes(
         ? `Project already has capabilities matching: ${matches.join(", ")}`
         : `No matching capabilities found. Signal may be worth adopting.`,
     });
+  });
+
+  // LLM-based evaluation (requires evaluator)
+  app.post("/:name/evaluate-llm", async (c) => {
+    if (!evaluator) {
+      return c.json({ error: "LLM evaluation not available" }, 501);
+    }
+
+    const name = c.req.param("name");
+    const body = await c.req.json();
+
+    const project = analyzer.getProject(name);
+    if (!project) {
+      return c.json({ error: `Project not found: ${name}` }, 404);
+    }
+
+    const { signal, evidence } = body;
+    if (!signal || !signal.title) {
+      return c.json({ error: "signal.title is required" }, 400);
+    }
+
+    try {
+      const result = await evaluator.evaluate(name, signal, evidence ?? {
+        codeMatches: 0,
+        codeFiles: [],
+        gitCommits: 0,
+        gitRecent: false,
+        issueMatches: 0,
+        issueRefs: [],
+      });
+
+      return c.json(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return c.json({ error: msg }, 500);
+    }
   });
 
   return app;

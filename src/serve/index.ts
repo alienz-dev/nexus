@@ -10,6 +10,8 @@ import { UnifiedSearch } from "../knowledge/search.js";
 import { GapDetector } from "../agents/gap-detector.js";
 import * as ingest from "../ingest/index.js";
 import { ProjectContextAnalyzer } from "../ingest/project-context-analyzer.js";
+import { AdoptionEvaluator } from "../agents/adoption-evaluator.js";
+import { createLLMClient } from "../llm/client.js";
 
 async function main() {
   const config = loadConfig();
@@ -38,14 +40,23 @@ async function main() {
     ingest.register(rssBridge);
   }
 
-  const projectAnalyzer = new ProjectContextAnalyzer(store, {
+  const logger = {
     debug: () => {},
     info: (msg: string) => console.log(`[INFO] ${msg}`),
     warn: (msg: string) => console.warn(`[WARN] ${msg}`),
     error: (msg: string) => console.error(`[ERROR] ${msg}`),
-  });
+  };
 
-  const app = createApp({ search, indexer, store, detector, resolver, adapters, projectAnalyzer });
+  const projectAnalyzer = new ProjectContextAnalyzer(store, logger);
+
+  // Create LLM client for adoption evaluation (optional)
+  const llm = createLLMClient(config.llm);
+  let adoptionEvaluator: AdoptionEvaluator | undefined;
+  if (llm.isConfigured()) {
+    adoptionEvaluator = new AdoptionEvaluator(store, llm, projectAnalyzer, logger);
+  }
+
+  const app = createApp({ search, indexer, store, detector, resolver, adapters, projectAnalyzer, adoptionEvaluator });
   const port = config.server?.port ?? 3777;
   const host = config.server?.host ?? "localhost";
 

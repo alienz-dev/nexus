@@ -15,6 +15,7 @@ import { createStatusRoutes } from "./routes/status.js";
 import { createFeedbackRoutes } from "./routes/feedback.js";
 import { createProjectRoutes } from "./routes/project.js";
 import type { ProjectContextAnalyzer } from "../ingest/project-context-analyzer.js";
+import type { AdoptionEvaluator } from "../agents/adoption-evaluator.js";
 
 export interface AppContext {
   search: UnifiedSearch;
@@ -24,6 +25,7 @@ export interface AppContext {
   resolver: EntityResolver;
   adapters: BridgeAdapter[];
   projectAnalyzer?: ProjectContextAnalyzer;
+  adoptionEvaluator?: AdoptionEvaluator;
 }
 
 /** Create and configure the Hono application. */
@@ -43,7 +45,7 @@ export function createApp(ctx: AppContext): Hono {
 
   // Project context routes (optional)
   if (ctx.projectAnalyzer) {
-    app.route("/api/projects", createProjectRoutes(ctx.store, ctx.projectAnalyzer));
+    app.route("/api/projects", createProjectRoutes(ctx.store, ctx.projectAnalyzer, ctx.adoptionEvaluator));
   }
 
   // Health check

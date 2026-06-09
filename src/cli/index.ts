@@ -16,6 +16,7 @@ import { watchCommand } from "./commands/watch.js";
 import { exportCommand } from "./commands/export.js";
 import { syncCommand } from "./commands/sync.js";
 import { projectCommand } from "./commands/project.js";
+import { feedbackCommand } from "./commands/feedback.js";
 
 const program = new Command();
 
@@ -129,6 +130,22 @@ program
     adoptedPatterns: opts.adoptedPatterns,
     enhancementAreas: opts.enhancementAreas,
     maturity: opts.maturity,
+  }));
+
+program
+  .command("feedback")
+  .description("Manage adoption feedback")
+  .option("-a, --action <action>", "Action: list, stats, pending, update", "list")
+  .option("-p, --project <name>", "Project name")
+  .option("-i, --id <id>", "Feedback entry ID")
+  .option("-o, --outcome <outcome>", "Outcome: adopted, skipped, ignored, unknown")
+  .option("-n, --notes <notes>", "Notes for update")
+  .action((opts) => feedbackCommand({
+    action: opts.action as any,
+    project: opts.project,
+    id: opts.id,
+    outcome: opts.outcome,
+    notes: opts.notes,
   }));
 
 program.parse();
