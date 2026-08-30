@@ -86,7 +86,7 @@ export function loadConfig(configPath?: string): NexusConfig {
 
   if (!existsSync(path)) {
     console.warn(`Config not found at ${path}, using defaults`);
-    return ConfigSchema.parse({});
+    return expandConfigPaths(ConfigSchema.parse({}), path);
   }
 
   const raw = readFileSync(path, "utf-8");
@@ -99,7 +99,7 @@ export function loadConfig(configPath?: string): NexusConfig {
     return expandConfigPaths(config, path);
   } catch (e) {
     console.warn(`Failed to parse config: ${e}, using defaults`);
-    return ConfigSchema.parse({});
+    return expandConfigPaths(ConfigSchema.parse({}), path);
   }
 }
 

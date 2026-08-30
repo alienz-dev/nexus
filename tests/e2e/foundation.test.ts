@@ -63,8 +63,8 @@ search:
     const config = loadConfig(configPath);
 
     expect(config.version).toBe("1");
-    expect(config.database.main).toBe("./test.sqlite");
-    expect(config.database.vectors).toBe("./test.lance");
+    expect(config.database.main).toBe(join(tempDir, "test.sqlite"));
+    expect(config.database.vectors).toBe(join(tempDir, "test.lance"));
     expect(config.sources.my_source).toBeDefined();
     expect(config.sources.my_source.path).toBe("/tmp/test");
     expect(config.sources.my_source.enabled).toBe(true);
@@ -83,8 +83,8 @@ search:
     const { loadConfig } = await import("../../src/lib/config.js");
     const config = loadConfig(join(tempDir, "nonexistent.yaml"));
 
-    expect(config.database.main).toBe("./data/nexus.sqlite");
-    expect(config.database.vectors).toBe("./data/vectors.lance");
+    expect(config.database.main).toBe(join(tempDir, "data/nexus.sqlite"));
+    expect(config.database.vectors).toBe(join(tempDir, "data/vectors.lance"));
     expect(config.server.port).toBe(3777);
     expect(config.server.host).toBe("localhost");
     expect(config.llm.maxRetries).toBe(2);
@@ -102,7 +102,8 @@ search:
     const config = loadConfig(configPath);
 
     // Should get defaults, not throw
-    expect(config.database.main).toBe("./data/nexus.sqlite");
+    expect(config.database.main).toBe(join(tempDir, "data/nexus.sqlite"));
+    expect(config.database.vectors).toBe(join(tempDir, "data/vectors.lance"));
     expect(config.server.port).toBe(3777);
   });
 
